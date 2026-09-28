@@ -1,0 +1,54 @@
+/* 디자인 토큰 — A 관제 스코프(명세 §6). 어두운 테마 하나만 쓴다. */
+:root {
+  color-scheme: dark;
+
+  /* 바탕 */
+  --bg: #14202b;
+  --nav: #101921;
+  --panel: #1b2936;
+  --selected: #223345;
+  --line: #2c3f52;
+  --line-strong: #3a5068;
+  --stripe: #243446;
+
+  /* 글자 */
+  --text: #e6edf3;
+  --text-2: #a3b4c4;
+  --text-3: #7f93a6;
+  --text-body: #c3d0dc; /* 메일 요약·메모 본문 */
+  --text-hover: #ffffff;
+
+  /* 강조 */
+  --amber: #f2b04a; /* 이번 주·오늘·주요 동작 */
+  --amber-bg: #2b2a22;
+  --amber-line: #5c4a2a;
+  --coral: #f2735f; /* 지남 */
+  --coral-bg: #33262b;
+  --coral-line: #5a3a3a;
+  --cyan: #5cc8dc; /* 초점·링크·켜짐 */
+  --on-amber: #14202b;
+
+  /* 연휴 빗금 */
+  --holiday: repeating-linear-gradient(135deg, var(--panel) 0 5px, var(--stripe) 5px 10px);
+
+  /* 글꼴 */
+  --font: 'IBM Plex Sans KR', 'Malgun Gothic', sans-serif;
+  --font-mono: Consolas, 'Cascadia Mono', 'Malgun Gothic', monospace;
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-12-5: 12.5px;
+  --fs-13: 13px;
+  --fs-13-5: 13.5px;
+  --fs-15: 15px;
+  --fs-16: 16px;
+  --fs-17: 17px;
+  --fs-22: 22px;
+
+  /* 모양 */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --hit: 44px; /* 누를 수 있는 것의 최소 크기 */
+  --dot: 8px;
+}

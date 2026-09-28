@@ -1,0 +1,49 @@
+{
+  "name": "wiki-radar",
+  "productName": "wiki-radar",
+  "version": "1.0.0",
+  "description": "개인 위키의 할 일·지식을 옆에 띄워두고 보는 데스크톱 앱",
+  "main": ".vite/build/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run test",
+    "e2e": "npm run package && playwright test",
+    "e2e:only": "playwright test",
+    "audit:runtime": "npm audit --omit=dev"
+  },
+  "author": {
+    "name": "ssongmho"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "@electron-forge/plugin-fuses": "^7.11.2",
+    "@electron-forge/plugin-vite": "^7.11.2",
+    "@electron/fuses": "^1.8.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "44.4.4",
+    "typescript": "^6.0.3",
+    "vite": "^6.4.3",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-sans-kr": "^5.3.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "yaml": "^2.9.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ssongmho/wiki-radar.git"
+  }
+}

@@ -1,0 +1,981 @@
+/* 두 모드가 함께 쓰는 조각: 머리글, 주간 트랙, 구간 머리, 할 일 줄, 칩, 버튼, 상태 문구 */
+
+/* ── 머리글 ── */
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.brand-name {
+  font-size: var(--fs-15);
+  font-weight: 600;
+}
+
+.brand-date {
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.section-title {
+  font-size: var(--fs-13);
+  font-weight: 600;
+}
+
+.break-note {
+  font-size: var(--fs-12);
+  color: var(--amber);
+  white-space: nowrap;
+}
+
+.sub-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+/* ── 주간 트랙 ── */
+.track {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.track-cells,
+.track-labels {
+  display: grid;
+  grid-template-columns: 44px repeat(5, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.track--full .track-cells,
+.track--full .track-labels {
+  grid-template-columns: 48px repeat(5, minmax(0, 1fr));
+}
+
+.track-cell {
+  position: relative;
+  min-width: 0;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: var(--panel);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+}
+
+.track--full .track-cell {
+  height: 32px;
+}
+
+.track-cell--overdue {
+  background: var(--coral-bg);
+}
+
+.track-cell--overdue.is-empty {
+  background: var(--panel);
+}
+
+.track-cell.is-holiday {
+  background: var(--holiday);
+}
+
+.track-cell.is-today {
+  border-color: var(--amber);
+}
+
+.track-cell.is-today:not(.is-holiday) {
+  background: var(--amber-bg);
+}
+
+/* 지난 날은 바탕만 한 단계 어둡게(칸 전체에 opacity 를 걸면 지난 공휴일 이름의 대비가 2.4:1 로 떨어진다 —
+   글자는 text-2 그대로, 공휴일 빗금도 그대로 둔다. 시안의 지난 칸은 패널색 그대로다). */
+.track-cell.is-past:not(.is-holiday) {
+  background: var(--bg);
+}
+
+.track-holiday {
+  max-width: 100%;
+  padding: 0 2px;
+  overflow: hidden;
+  font-size: var(--fs-11);
+  line-height: 1.2;
+  color: var(--text-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.dot {
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+}
+
+.dot--coral {
+  background: var(--coral);
+}
+
+.dot--amber {
+  background: var(--amber);
+}
+
+.dot--muted {
+  background: var(--text-3);
+}
+
+.dots-num {
+  font-size: var(--fs-12);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dots-num--coral {
+  color: var(--coral);
+}
+
+.dots-num--amber {
+  color: var(--amber);
+}
+
+.dots-num--muted {
+  color: var(--text-2);
+}
+
+.track-labels {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.track-label--overdue {
+  color: var(--coral);
+}
+
+.track-label.is-today {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+/* ── 구간 ── */
+.bucket {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bucket-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 2px;
+  font-size: var(--fs-12);
+  font-weight: 600;
+}
+
+.bucket-head.is-empty {
+  color: var(--text-3);
+}
+
+.bucket-count {
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.bucket-hint {
+  margin-left: auto;
+  font-size: var(--fs-11);
+  font-weight: 400;
+  color: var(--text-3);
+}
+
+.tone-coral {
+  color: var(--coral);
+}
+
+.tone-amber {
+  color: var(--amber);
+}
+
+.tone-muted {
+  color: var(--text-2);
+}
+
+/* ── 할 일 줄(strip) ── */
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 58px;
+  padding: 9px 10px 9px 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  text-align: left;
+  /* 키보드·바깥 선택으로 스크롤해 올 때 목록 가장자리에 붙지 않게 */
+  scroll-margin: 10px 0;
+}
+
+.row:hover {
+  border-color: var(--line-strong);
+}
+
+.row.is-selected {
+  background: var(--selected);
+  border-color: var(--amber);
+}
+
+.strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.strip-top {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.strip--overdue .strip-top {
+  font-size: var(--fs-17);
+  line-height: 1.1;
+  color: var(--coral);
+}
+
+.strip--today .strip-top {
+  font-size: var(--fs-13);
+  line-height: 1.3;
+  color: var(--amber);
+}
+
+.strip--day .strip-top {
+  font-size: var(--fs-13);
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.strip--count .strip-top {
+  font-size: var(--fs-15);
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.strip--none .strip-top {
+  font-size: var(--fs-12);
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-3);
+}
+
+.strip-sub {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* 선택 바탕(#223345) 위에서도 4.5:1 을 지키도록 흐린 글자를 한 단계 밝힌다 */
+.row.is-selected .strip-sub,
+.row.is-selected .strip--none .strip-top {
+  color: var(--text-2);
+}
+
+.row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.row-title {
+  display: block;
+  font-size: var(--fs-13-5);
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+}
+
+.meta {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta .icon {
+  display: inline-block;
+  margin-right: 3px;
+  vertical-align: -2px;
+}
+
+.meta--coral {
+  color: var(--coral);
+}
+
+.meta--amber {
+  color: var(--amber);
+}
+
+/* ── 한 줄 요약 링크(오래 열림·기타) ── */
+.line-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--hit);
+  margin-top: 4px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+  text-align: left;
+}
+
+.line-link--dashed {
+  border-style: dashed;
+  border-color: var(--line-strong);
+}
+
+.line-link + .line-link {
+  margin-top: 0;
+}
+
+.line-link:hover {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.line-link-text {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: var(--hit);
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+.more-btn:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+
+/* ── 버튼 ── */
+.icon-btn {
+  width: var(--hit);
+  height: var(--hit);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--text-2);
+}
+
+.icon-btn:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.icon-btn[aria-pressed='true'] {
+  color: var(--cyan);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--hit);
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radius);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--amber);
+  color: var(--on-amber);
+}
+
+.btn--primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn--secondary {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.btn--secondary:hover {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--hit);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font-size: var(--fs-12-5);
+  color: var(--cyan);
+  text-align: left;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── 칩 ── */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.chip--coral {
+  border-color: var(--coral-line);
+  color: var(--coral);
+}
+
+.chip--amber {
+  border-color: var(--amber-line);
+  color: var(--amber);
+}
+
+/* ── 상태 문구 ── */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 24px 16px;
+  color: var(--text-2);
+}
+
+.state-error-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.state-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-13-5);
+  font-weight: 600;
+  color: var(--coral);
+}
+
+.state-title--plain {
+  color: var(--text);
+}
+
+.state-text {
+  font-size: var(--fs-13);
+  color: var(--text-2);
+}
+
+.state-detail {
+  font-size: var(--fs-12-5);
+  line-height: 1.6;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.state-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--line);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-note {
+  font-size: var(--fs-12-5);
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+/* 부분 스냅샷 안내(읽지 못한 파일이 있음) */
+.partial-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius-sm);
+  background: var(--amber-bg);
+  font-size: var(--fs-12);
+  line-height: 1.5;
+  color: var(--amber);
+}
+
+.partial-note .icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.path-text {
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+/* 잠깐 뜨는 안내 */
+.notice {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 10;
+  max-width: min(480px, calc(100vw - 24px));
+  padding: 10px 14px;
+  transform: translateX(-50%);
+  background: var(--selected);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.35);
+  font-size: var(--fs-12-5);
+  color: var(--text);
+}
+
+.notice:empty {
+  display: none;
+}
+
+/* 비활성 버튼(저장 중·바뀐 것 없음). 모양은 남기되 누를 수 없음을 알 수 있게 */
+.btn:disabled,
+.btn:disabled:hover {
+  cursor: not-allowed;
+  filter: none;
+}
+
+.btn--primary:disabled {
+  background: var(--line);
+  color: var(--text-2);
+}
+
+.btn--secondary:disabled {
+  border-color: var(--line);
+  color: var(--text-3);
+}
+
+/* ── 처리 결과 입력(시안 A-Full) ── */
+.result-form-title {
+  font-size: var(--fs-15);
+  font-weight: 600;
+}
+
+.result-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.result-legend {
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.radio-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 8px;
+}
+
+.radio-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--hit);
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: var(--fs-13-5);
+  cursor: pointer;
+}
+
+.radio-card:hover {
+  border-color: var(--line-strong);
+}
+
+.radio-card.is-checked {
+  background: var(--amber-bg);
+  border-color: var(--amber);
+  font-weight: 600;
+}
+
+.radio-card input {
+  margin: 0;
+  accent-color: var(--amber);
+}
+
+/* 라디오 동그라미가 작아 초점 외곽선을 칸 전체에 그린다 */
+.radio-card:has(input:focus-visible) {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.radio-card input:focus-visible {
+  outline: none;
+}
+
+.radio-card-now {
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-11);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.text-input {
+  width: 100%;
+  height: var(--hit);
+  padding: 0 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+.text-input::placeholder {
+  color: var(--text-3);
+}
+
+.text-input:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+
+.text-input:disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+
+.text-area {
+  height: auto;
+  min-height: 108px;
+  padding: 10px 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.check-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: var(--hit);
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.check-card:hover {
+  border-color: var(--line-strong);
+}
+
+.check-card:has(input:checked) {
+  border-color: var(--amber-line);
+}
+
+.check-card input {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--amber);
+}
+
+.check-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.check-card-title {
+  font-size: var(--fs-13-5);
+  font-weight: 500;
+}
+
+.check-card-desc {
+  font-size: var(--fs-12);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.form-problem {
+  padding: 8px 12px;
+  background: var(--coral-bg);
+  border: 1px solid var(--coral-line);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12-5);
+  line-height: 1.5;
+  color: var(--coral);
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-actions .btn--primary {
+  padding: 0 24px;
+}
+
+.result-actions .btn--secondary {
+  padding: 0 18px;
+}
+
+.result-hint {
+  margin-left: auto;
+  font-size: var(--fs-12);
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.qv-actions .result-hint {
+  margin-left: 0;
+  color: var(--text-2);
+}
+
+/* ── 저장 결과 알림 ── */
+.save-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 8px 12px 14px;
+  background: var(--selected);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius);
+  font-size: var(--fs-12-5);
+  line-height: 1.55;
+}
+
+.save-notice--warn {
+  border-left-color: var(--amber);
+}
+
+.save-notice--error {
+  border-left-color: var(--coral);
+}
+
+.save-notice-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.save-notice-head > .icon {
+  margin-top: 13px;
+  color: var(--cyan);
+}
+
+.save-notice--warn .save-notice-head > .icon {
+  color: var(--amber);
+}
+
+.save-notice--error .save-notice-head > .icon {
+  color: var(--coral);
+}
+
+.save-notice-title {
+  flex-grow: 1;
+  min-width: 0;
+  padding-top: 10px;
+  font-size: var(--fs-13-5);
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.save-notice-close {
+  flex-shrink: 0;
+}
+
+.save-notice-close:hover {
+  background: var(--panel);
+}
+
+.save-notice-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 8px;
+}
+
+.save-notice-lines li {
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+/* 경고색 줄(못 찾은 앵커·경고). 선택 바탕 위에서도 앰버는 4.5:1 이상 */
+.save-notice-lines li.is-warn {
+  color: var(--amber);
+}
+
+.save-notice--error .save-notice-lines li.is-warn {
+  color: var(--coral);
+}
+
+/* ── 확인 대화상자 ── */
+.dialog {
+  width: min(520px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  padding: 0;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
+  color: var(--text);
+}
+
+.dialog::backdrop {
+  background: rgb(5 10 15 / 0.62);
+}
+
+.dialog-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.dialog-title {
+  font-size: var(--fs-17);
+  font-weight: 600;
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: var(--fs-13-5);
+  line-height: 1.65;
+  color: var(--text-body);
+}
+
+.dialog-body strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dialog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* 한국어 풀이 글은 낱말 중간에서 줄을 바꾸지 않는다(긴 경로는 overflow-wrap 으로 끊는다) */
+.check-card-desc,
+.result-hint,
+.form-problem,
+.qv-lead,
+.dialog-body,
+.save-notice-title,
+.save-notice-lines li,
+.queue-item-note,
+.skip-reason {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}

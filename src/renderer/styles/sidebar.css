@@ -1,0 +1,114 @@
+/* 사이드바 모드: 머리(끌어 옮기기) → 이번 주 트랙 → 구간 목록(여기만 스크롤) */
+.sidebar {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.sb-head {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 6px 0 16px;
+  border-bottom: 1px solid var(--line);
+  user-select: none;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* 머리 안의 버튼은 끌기 영역에서 뺀다(빼지 않으면 눌리지 않는다) */
+.sb-head button {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.sb-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+.sb-week {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sb-list {
+  flex-grow: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px 10px;
+}
+
+.row--sidebar .row-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar > .state {
+  flex-grow: 1;
+}
+
+/* 맨 아래 상태 줄(시안 Main 의 nav, 높이 60). 2단계는 "반영" 한 칸. 3단계에서 변경·판단 칸이 붙는다 */
+.sb-status {
+  height: 60px;
+  flex-shrink: 0;
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  border-top: 1px solid var(--line);
+}
+
+.sb-status-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 8px;
+  background: transparent;
+  border: 0;
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+.sb-status-item + .sb-status-item {
+  border-left: 1px solid var(--line);
+}
+
+.sb-status-item:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.sb-status-item:focus-visible {
+  outline-offset: -2px;
+}
+
+.sb-status-count {
+  font-weight: 700;
+  color: var(--amber);
+}
+
+/* 0건이면 흐리게(글자 대비는 4.5:1 을 지킨다) */
+.sb-status-item.is-zero {
+  color: var(--text-3);
+}
+
+.sb-status-item.is-zero .sb-status-count {
+  font-weight: 500;
+  color: var(--text-3);
+}
