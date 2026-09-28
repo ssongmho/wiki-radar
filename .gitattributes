@@ -1,0 +1,3 @@
+# 테스트 샘플 위키는 줄바꿈·BOM 보존을 검증하므로 바이트 그대로 둔다
+test/fixtures/** -text
+*.png binary
