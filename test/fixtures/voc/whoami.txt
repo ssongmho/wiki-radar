@@ -1,0 +1,6 @@
+로그인 ID   : hong
+이름        : 홍길동
+이메일      : owner@example.com
+권한(role)  : staff
+부서        : 샘플팀
+백엔드      : https://voc.example.test:11300

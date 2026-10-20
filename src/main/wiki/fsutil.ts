@@ -40,8 +40,10 @@ export interface WalkResult {
 /**
  * 볼트 안의 `.md` 파일을 모은다. 제외 폴더는 **내려가기 전에** 잘라낸다
  * (실제 위키는 raw/ 아래에 수천 개가 있다). 진짜 심볼릭 링크·정션은 따라가지 않는다.
+ * skipDir 를 주면 제외 폴더 판정을 바꾼다(팀 위키 — 2.9단계 §3: 개인 위키의 raw/·backup/ 규칙을 쓰지 않는다).
  */
-export function walkMarkdown(root: string): WalkResult {
+export function walkMarkdown(root: string, opts: { skipDir?: (name: string, rel: string) => boolean } = {}): WalkResult {
+  const skipDir = opts.skipDir ?? ((name: string) => EXCLUDED_DIRS.has(name));
   const files: string[] = [];
   const errors: string[] = [];
   const stack: string[] = [''];
@@ -72,7 +74,7 @@ export function walkMarkdown(root: string): WalkResult {
         }
       }
       if (isDir) {
-        if (!EXCLUDED_DIRS.has(name)) stack.push(rel);
+        if (!skipDir(name, rel)) stack.push(rel);
       } else if (isFile && name.toLowerCase().endsWith('.md')) {
         files.push(rel);
       }

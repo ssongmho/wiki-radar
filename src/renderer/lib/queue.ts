@@ -3,7 +3,8 @@
 import type { QueueItem, ReflectRun, TaskStatus } from '../../shared/types';
 import { formatHourMinute, formatMailDate, formatMonthDay, localYmd, yearOf } from './date';
 import { isTaskStatus, statusLabel } from './result';
-import { textOf } from './tasks';
+import { mailDateText } from './mailbox';
+import { senderName, textOf } from './tasks';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -17,7 +18,7 @@ function normalizeItem(value: unknown): QueueItem | null {
   if (!isRecord(value) || typeof value.id !== 'string' || value.id === '') return null;
   const item: QueueItem = {
     id: value.id,
-    kind: value.kind === 'decision' ? 'decision' : 'task',
+    kind: value.kind === 'decision' ? 'decision' : value.kind === 'mail' ? 'mail' : 'task',
     createdAt: textOf(value.createdAt) ?? '',
     title: textOf(value.title) ?? '(제목 없음)',
     note: typeof value.note === 'string' ? value.note : '',
@@ -27,6 +28,14 @@ function normalizeItem(value: unknown): QueueItem | null {
   for (const key of ['taskId', 'owner', 'company', 'file', 'mail', 'src', 'context'] as const) {
     const text = textOf(value[key]);
     if (text) item[key] = text;
+  }
+  // 2.14: 메일함에서 넣은 메일(kind mail)
+  if (item.kind === 'mail') {
+    for (const key of ['mailKey', 'hint', 'from', 'mailDate', 'blocked'] as const) {
+      const text = textOf(value[key]);
+      if (text) item[key] = text;
+    }
+    item.scope = value.scope === 'thread' ? 'thread' : 'mail';
   }
   return item;
 }
@@ -108,9 +117,33 @@ export function runElapsed(run: ReflectRun, nowMs: number): number | null {
 /** 대기열 항목의 상태 풀이: '완료', '내 일 아님 → 김담당', 판단 결정은 '판단 결정' */
 export function queueStatusText(item: QueueItem): string {
   if (item.kind === 'decision') return '판단 결정';
+  if (item.kind === 'mail') return item.scope === 'thread' ? '메일 · 스레드' : '메일';
   if (!item.status) return '상태 없음';
   const label = statusLabel(item.status as TaskStatus);
   return item.status === 'notmine' && item.owner ? `${label} → ${item.owner}` : label;
+}
+
+/** mail 항목의 출처 줄(2.14 §9): '출처: 메일 · 한결케미칼 EHS팀 · 9월 22일 14:42 · 한결케미칼'. mail 이 아니면 '' */
+export function queueSourceText(item: QueueItem, today: string): string {
+  if (item.kind !== 'mail') return '';
+  const parts = ['출처: 메일'];
+  const name = senderName(item.from);
+  if (name) parts.push(name);
+  const date = item.mailDate ? mailDateText(item.mailDate, today) : '';
+  if (date) parts.push(date);
+  if (item.hint) parts.push(item.hint);
+  return parts.join(' · ');
+}
+
+/** 대기열의 mail 항목 수(확인 대화상자 「메일 N건이 함께…」) */
+export function queueMailCount(items: readonly QueueItem[]): number {
+  return items.filter((i) => i.kind === 'mail' && !i.blocked).length;
+}
+
+/** 확인 대화상자 숫자: 이번에 보낼 항목(blocked 없는 것)과 막혀서 빠지는 항목 */
+export function queueSendCounts(items: readonly QueueItem[]): { send: number; blocked: number } {
+  const blocked = items.filter((i) => !!i.blocked).length;
+  return { send: items.length - blocked, blocked };
 }
 
 /** 대기열에 넣은 시각 '9월 23일 오후 5:28'(올해면 해 생략) */

@@ -1,0 +1,302 @@
+/* 할 일 쪽 VOC(2.6단계 명세 §5 'VOC 처리' · §6 '메일 → VOC 등록') — 목록 줄·상세의 VOC 칩, 상세의 VOC 처리 칸, VOC 로 등록 칸.
+   색·글꼴은 tokens.css 의 A 관제 스코프 토큰만 쓴다. 버튼·입력·알림·대화상자는 components.css·reply.css 의 것을 그대로 쓴다 */
+
+/* ── VOC 칩 ── */
+/* 목록 줄 메타 앞의 번호 칩(줄이 좁아도 줄지 않는다) */
+.task-voc-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.chip--voc {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.chip--voc .icon {
+  color: var(--cyan);
+}
+
+/* ── VOC 처리·VOC 로 등록 칸 공통 ── */
+.voc-task-panel,
+.voc-create-panel {
+  gap: 16px;
+}
+
+/* VOC 로 등록 칸은 회신 칸처럼 왼쪽에 시안 띠 — 처리 결과 입력과 다른 일(VOC 에 쓰기)임을 보인다 */
+.voc-create-panel {
+  border-left: 3px solid var(--cyan);
+}
+
+.voc-task-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.voc-task-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12);
+  line-height: 1.4;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.voc-task-number .icon {
+  color: var(--cyan);
+}
+
+.voc-task-lead {
+  margin-top: -6px;
+  font-size: var(--fs-12-5);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* 티켓 요약: 이름 | 값 두 칸 표(VOC 화면 상세 vv-facts 와 같은 밀도) — 좁은 상세 열에서 항목마다 두 줄로 길어지지 않게 */
+.voc-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 18px;
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+.voc-fact {
+  display: contents;
+}
+
+.voc-fact dt {
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.voc-fact dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--text);
+}
+
+.voc-fact dd.tone-coral {
+  color: var(--coral);
+}
+
+.voc-fact dd.tone-amber {
+  color: var(--amber);
+}
+
+/* 요청 내용(HTML 을 글자로 편 것) */
+.voc-task-text {
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--text-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.voc-fold-btn {
+  align-self: flex-start;
+  min-height: 32px;
+  font-size: var(--fs-12);
+}
+
+/* 답변 달기 · 상태: 칸 사이를 선으로 나눈다 */
+.voc-task-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.voc-task-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.voc-task-row .btn--secondary {
+  padding: 0 16px;
+}
+
+/* 고르기 칸(select): 입력 칸 모양 + 글꼴 이어받기(base.css 는 button·input·textarea 만 이어받는다) */
+.voc-select {
+  width: auto;
+  min-width: 160px;
+  padding: 0 8px 0 10px;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.voc-select:disabled {
+  cursor: not-allowed;
+}
+
+.voc-count {
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.voc-count.is-over {
+  color: var(--coral);
+}
+
+/* 해결·완료는 VOC 웹에서 — 안내 + [VOC 에서 열기] */
+.voc-task-web {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.voc-task-web-note {
+  font-size: var(--fs-12-5);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.voc-task-web-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.voc-task-web-actions .btn--secondary {
+  padding: 0 16px;
+}
+
+/* ── 메일 → VOC 등록 ── */
+.voc-create {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 접힌 상태: 한 줄 안내 + [VOC 로 등록] */
+.voc-create-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.voc-create-bar-text {
+  display: flex;
+  flex: 1 1 260px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.voc-create-bar-title {
+  font-size: var(--fs-13-5);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.voc-create-bar-desc {
+  font-size: var(--fs-12);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.voc-create-bar .btn--secondary {
+  padding: 0 16px;
+}
+
+/* 'VOC-… 로 등록함' 배지(누르면 VOC 화면의 그 티켓) */
+.voc-created-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--hit);
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-13);
+  font-weight: 500;
+  color: var(--text);
+  text-align: left;
+}
+
+.voc-created-badge .icon {
+  color: var(--cyan);
+}
+
+.voc-created-badge:hover {
+  border-color: var(--cyan);
+  color: var(--text-hover);
+}
+
+.voc-create-desc {
+  min-height: calc(10 * 1.6em + 22px);
+}
+
+/* 고객사·시스템·요청유형·우선순위·담당: 칸 너비에 맞춰 여러 열 */
+.voc-create-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 16px;
+}
+
+.voc-create-grid .voc-select {
+  width: 100%;
+  min-width: 0;
+}
+
+/* 한국어 풀이 글은 낱말 중간에서 줄을 바꾸지 않는다 */
+.voc-task-lead,
+.voc-task-web-note,
+.voc-create-bar-desc,
+.voc-fact dd,
+.voc-created-badge,
+.aside-voc-note {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* 오른쪽 열의 VOC 티켓 칸: 번호 · 안내 · [VOC 화면에서 보기] 사이 간격 */
+.aside-voc-note {
+  margin: 4px 0 10px;
+}

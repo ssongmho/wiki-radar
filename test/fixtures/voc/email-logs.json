@@ -1,0 +1,15 @@
+[
+  {
+    "id": 9501,
+    "ticketId": 1004,
+    "sentByName": null,
+    "toAddresses": [
+      "owner@example.com"
+    ],
+    "ccAddresses": [],
+    "subject": "[VOC] VOC-2026-0104 담당 배정 안내",
+    "status": "sent",
+    "emailType": "assignment",
+    "sentAt": "2026-09-10T00:25:00"
+  }
+]

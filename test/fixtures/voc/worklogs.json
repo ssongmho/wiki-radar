@@ -1,0 +1,30 @@
+[
+  {
+    "id": 8001,
+    "entityType": "ticket",
+    "entityId": 1005,
+    "userId": 101,
+    "userName": "홍길동",
+    "workDate": "2026-09-21",
+    "minutes": 60,
+    "hours": 1,
+    "note": "권한 요청 확인",
+    "createdBy": 101,
+    "createdAt": "2026-09-21T01:00:00",
+    "updatedAt": "2026-09-21T01:00:00"
+  },
+  {
+    "id": 8002,
+    "entityType": "ticket",
+    "entityId": 1005,
+    "userId": 102,
+    "userName": "김담당",
+    "workDate": "2026-09-22",
+    "minutes": 30,
+    "hours": 0.5,
+    "note": null,
+    "createdBy": 102,
+    "createdAt": "2026-09-22T02:00:00",
+    "updatedAt": "2026-09-22T02:00:00"
+  }
+]

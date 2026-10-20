@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { SaveResultOutput, Task, TaskStatus } from '../../shared/types';
 import { isValidYmd } from './calendar';
-import { ANCHOR_LINE_RE, checkboxAnchorMatch, checkboxSyncTitle, codePointSlice } from './checkbox';
+import { ANCHOR_LINE_RE, checkboxAnchorMatch, checkboxSyncTitle, codePointLength, codePointSlice, coreOf, rawFields } from './checkbox';
 import { LOG_HEADINGS } from './curated';
 import {
   EXCLUDED_DIRS,
@@ -842,11 +842,12 @@ function runSync(cache: FileCache, it: SyncItem, today: string): SyncResult {
     }
     // if re.match(r"^- \[[ xX]\]", ln) and a["m"] in ln:
     const matches = (ln: string) => ANCHOR_LINE_RE.test(ln) && ln.includes(a.m);
-    // 체크박스 항목은 스냅샷이 가리킨 줄이 그대로 있으면 그 줄(같은 문구의 줄이 여럿일 때 엉뚱한 줄을 고치지 않게).
+    // 체크박스 항목은 스냅샷이 가리킨 줄이 글자 그대로 있으면 그 줄(같은 문구의 줄이 여럿일 때 엉뚱한 줄을 고치지 않게).
+    // 줄 전체가 같으면 문구 포함 여부는 보지 않는다 — 핵심문구 규칙이 어긋나도(값 안의 대괄호 등) 그 줄을 놓치지 않게.
     // 그 밖에는 sync_todo 처럼 조건에 맞는 첫 줄.
     let idx = -1;
     const pref = a.preferLine;
-    if (pref && lines[pref.index] === pref.text && matches(pref.text)) idx = pref.index;
+    if (pref && lines[pref.index] === pref.text && ANCHOR_LINE_RE.test(pref.text)) idx = pref.index;
     if (idx < 0) idx = lines.findIndex(matches);
     if (idx >= 0) {
       const ln = lines[idx];
@@ -860,6 +861,15 @@ function runSync(cache: FileCache, it: SyncItem, today: string): SyncResult {
       // "%s — 문구 미발견: %s / %s" % (it["t"], a["f"], a["m"][:28])
       res.unmatched.push(`${it.t} — 문구 미발견: ${a.f} / ${codePointSlice(a.m, 28)}`);
     }
+  }
+
+  // 체크박스 항목은 자기 줄이 곧 상태다. 줄을 못 찾았는데 sync_todo 처럼 로그 절에 적으면 줄은 그대로라
+  // 목록에서 영영 안 빠지고 로그에만 기록이 남는다(2026-09-28 실제로 일어났다) — 아무것도 쓰지 않고 멈춘다.
+  if (!hit && it.source === 'checkbox') {
+    const where = it.anchors.map((a) => a.f).join(', ');
+    throw new Error(
+      `할 일 줄을 찾지 못함(${where}) — 그사이 줄이 바뀌었거나 지워졌을 수 있음. 목록을 새로 읽은 뒤 다시 저장하세요 — 아무것도 쓰지 않았음`,
+    );
   }
 
   if (hit) {
@@ -882,10 +892,6 @@ function runSync(cache: FileCache, it: SyncItem, today: string): SyncResult {
     for (const h of [H_DONE, H_DELG, H_WIP]) if (unlog(h, it.t)) removed = true;
     if (removed) res.unlogged.push(it.t);
   }
-  if (!hit && it.source === 'checkbox' && status !== 'open') {
-    res.warnings.push(`체크박스 줄을 찾지 못해 ${TODO} 로그 절에 적음: ${it.t} — 목록에는 계속 보일 수 있음`);
-  }
-
   if (note) {
     if (writeMemo(note)) res.memo = true;
   }
@@ -999,6 +1005,292 @@ export function applyWritebackWith(input: WritebackInput, hooks: WritebackHooks)
       continue;
     }
     return finish(res, warnings);
+  }
+  return fail(`파일이 계속 바뀌고 있어 저장하지 못함(${MAX_WRITE_ATTEMPTS}번 다시 읽음)`);
+}
+
+// ---------------------------------------------------------------- 할 일 줄에 필드 하나 붙이기(2.6단계 §6)
+
+export interface LineFieldInput {
+  /** 마스터 볼트 절대경로 */
+  wikiRoot: string;
+  /** 오늘 YYYY-MM-DD(형식만 본다 — 줄 필드는 날짜를 쓰지 않는다) */
+  today: string;
+  /** 스냅샷의 체크박스 할 일, 또는 체크박스 줄에 연결된 큐레이션 할 일(file·line·rawLine·anchors 를 쓴다) */
+  task: Task;
+  /** 필드 이름(예: voc). 글자·숫자·_ 만 */
+  key: string;
+  /** 필드 값(예: VOC-2026-0012). 대괄호·줄바꿈 없음 */
+  value: string;
+  /** 백업 폴더 이름에 쓸 시각. 없으면 지금 */
+  now?: Date;
+}
+
+export interface LineFieldResult {
+  /** 쓴 파일(볼트 기준 상대경로) */
+  files: string[];
+  /** 백업 폴더(볼트 기준 상대경로) */
+  backupDir?: string;
+  warnings: string[];
+}
+
+/**
+ * 필드 이름: build_todo core_of 가 떼어 내는 이름(`\w+` — CORE_FIELD_RE)만 받는다. 그래야 붙인 뒤에도
+ * 핵심문구(ID·앵커)가 그대로다.
+ */
+const LINE_FIELD_KEY_RE = /^[\p{L}\p{N}_]{1,40}$/u;
+/** 필드 값에 쓸 수 없는 글자: 대괄호(필드가 깨진다)·제어 문자(줄바꿈 포함) */
+const BAD_LINE_FIELD_VALUE_RE = /[[\]\u0000-\u001f\u007f\u2028\u2029]/;
+const LINE_FIELD_VALUE_MAX = 200;
+
+/** 줄의 `[key:: 값]` 값(앞뒤 공백 걷음). 없으면 undefined, 값이 비어 있으면 '' */
+export function lineFieldValue(line: string, key: string): string | undefined {
+  if (typeof line !== 'string' || typeof key !== 'string' || key === '') return undefined;
+  return rawFields(line).get(key);
+}
+
+/**
+ * 이 줄에 key 필드가 이미 있는가 — 값이 빈 `[voc::]`, rawFields 가 못 읽는 모양(`[voc::` 뒤에 `]` 가 없음 등)도 있는 것으로 본다.
+ * applyLineField 가 같은 판정으로 거부하므로, 줄에 붙이기 전에 되돌릴 수 없는 일(VOC 티켓 만들기)을 하는 쪽도 이것으로 먼저 본다
+ */
+export function hasLineField(line: string, key: string): boolean {
+  if (typeof line !== 'string' || typeof key !== 'string' || key === '') return false;
+  if (lineFieldValue(line, key) !== undefined) return true;
+  return new RegExp(`\\[${PY_WS}*${escapeRegExp(key)}${PY_WS}*::`, 'u').test(line);
+}
+
+/**
+ * 줄을 다시 찾을 때 쓸 문구: 체크박스 할 일은 핵심문구 앞 40자(checkboxAnchorMatch), 큐레이션 할 일은 스냅샷이
+ * 연결한 줄(file·rawLine)에 든 items.json 앵커 문구(sync_todo 가 그 줄을 찾는 문구와 같다 — 없으면 핵심문구).
+ */
+function lineAnchorOf(task: Task & { rawLine: string }): string {
+  if (task.source === 'curated') {
+    const hit = (task.anchors ?? []).find((a) => a && typeof a.match === 'string' && a.match !== '' && task.rawLine.includes(a.match));
+    if (hit) return hit.match;
+  }
+  return checkboxAnchorMatch(task.rawLine);
+}
+
+/**
+ * 파일 줄에서 할 일 줄을 찾는다(0부터, 없으면 -1): 스냅샷이 가리킨 자리에 원문 그대로 있으면 그 줄 →
+ * 원문 그대로인 다른 줄(위에 줄이 늘거나 줄었을 때) → 앵커 문구(lineAnchorOf)가 든 첫 체크박스 줄.
+ */
+function findTaskLine(lines: readonly string[], task: Task, anchor: string): number {
+  const raw = task.rawLine as string;
+  if (typeof task.line === 'number' && Number.isInteger(task.line) && task.line >= 1) {
+    const i = task.line - 1;
+    if (lines[i] === raw && ANCHOR_LINE_RE.test(raw)) return i;
+  }
+  const same = lines.findIndex((ln) => ln === raw && ANCHOR_LINE_RE.test(ln));
+  if (same >= 0) return same;
+  return lines.findIndex((ln) => ANCHOR_LINE_RE.test(ln) && ln.includes(anchor));
+}
+
+/**
+ * 체크박스 할 일 줄(큐레이션 할 일이면 스냅샷이 연결한 앵커 줄) 끝에 ` [key:: value]` 를 붙인다(2.6단계 §6 — VOC 등록 번호). 같은 key 가 줄에 이미 있으면
+ * 바꾸지 않고 던진다. 안전장치는 applyWriteback 과 같다: 쓰기 허용 목록, 쓰기 직전 재확인(바뀌었으면 다시 읽고
+ * 처음부터 — 모두 3번), 쓰기로 열어 보기, 백업, 같은 폴더 임시 파일 → 이름 바꾸기, 줄바꿈·BOM 유지.
+ * 핵심문구(ID)는 바뀌지 않는다(필드는 core_of 가 떼어 낸다). sync_todo 는 모르는 필드를 그대로 둔다.
+ */
+export function applyLineField(input: LineFieldInput): LineFieldResult {
+  return applyLineFieldWith(input, {});
+}
+
+/** applyLineField 와 같고 시험용 끼워 넣기를 받는다 */
+export function applyLineFieldWith(input: LineFieldInput, hooks: WritebackHooks): LineFieldResult {
+  if (!input || typeof input !== 'object') throw new Error('저장 입력이 없음');
+  if (!isValidYmd(input.today)) throw new Error(`오늘 날짜 형식이 아님(YYYY-MM-DD): ${String(input.today)}`);
+  if (typeof input.wikiRoot !== 'string' || input.wikiRoot === '') throw new Error('위키 폴더가 지정되지 않음');
+  const { task, key } = input;
+  if (typeof key !== 'string' || !LINE_FIELD_KEY_RE.test(key)) throw new Error(`필드 이름 형식이 아님: ${String(key)}`);
+  const value = typeof input.value === 'string' ? pyStrip(input.value) : '';
+  if (value === '') throw new Error(`[${key}::] 에 넣을 값이 비어 있음`);
+  if (BAD_LINE_FIELD_VALUE_RE.test(value)) throw new Error(`[${key}::] 값에는 대괄호([ ])나 줄바꿈을 쓸 수 없음`);
+  if (codePointLength(value) > LINE_FIELD_VALUE_MAX) throw new Error(`[${key}::] 값이 너무 김(${LINE_FIELD_VALUE_MAX}자까지)`);
+  if (!task || typeof task !== 'object') throw new Error('저장할 항목이 없음');
+  if (task.source !== 'checkbox' && task.source !== 'curated') throw new Error('줄 필드는 위키 체크박스 줄이 있는 할 일에만 붙일 수 있음');
+  if (typeof task.file !== 'string' || typeof task.rawLine !== 'string') {
+    throw new Error(
+      task.source === 'curated'
+        ? `연결된 체크박스 줄이 없는 할 일이라 줄 필드를 붙일 수 없음: ${task.title}`
+        : `체크박스 항목에 파일·줄이 없음: ${task.title}`,
+    );
+  }
+  const anchor = lineAnchorOf(task as Task & { rawLine: string });
+  // 빈 문구는 파일의 첫 체크박스 줄에 걸린다 — 쓰지 않는다
+  if (pyStrip(anchor) === '') throw new Error(`체크박스 줄의 핵심문구가 비어 있어 저장할 수 없음: ${task.file}`);
+
+  const root = path.resolve(input.wikiRoot);
+  if (!isDirectory(root)) throw new Error(`위키 폴더를 찾을 수 없음: ${input.wikiRoot}`);
+  const realRoot = fs.realpathSync.native(root);
+  const sleep = hooks.sleep ?? sleepSync;
+  const rel = resolveAnchorRel(root, realRoot, task.file);
+  if (rel === null) throw new Error(`할 일 파일이 없음: ${task.file} — 아무것도 쓰지 않았음`);
+  const stamp = backupStamp(input.now ?? new Date());
+  const retryWarnings: string[] = [];
+  const backup: BackupState = { dirRel: undefined, made: new Map() };
+  const none: ReadonlySet<string> = new Set();
+
+  /** 실패: 파일은 하나뿐이라 이름 바꾸기 전에 멈추면 쓴 것이 없다 — 만든 백업을 치우고 던진다 */
+  const fail = (cause: string): never => {
+    pruneBackups(root, backup, none);
+    throw new Error(`${cause} — 아무것도 쓰지 않았음`);
+  };
+
+  for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
+    const cache = new FileCache(root, realRoot, sleep);
+    const f = cache.load(rel);
+    if (f.lines === null) fail(`할 일 파일이 없음: ${task.file}`);
+    const lines = (f.lines as string[]).slice();
+    const idx = findTaskLine(lines, task, anchor);
+    if (idx < 0) {
+      fail(`할 일 줄을 찾지 못함(${task.file}) — 그사이 줄이 바뀌었거나 지워졌을 수 있음. 목록을 새로 읽은 뒤 다시 하세요`);
+    }
+    const ln = lines[idx];
+    if (hasLineField(ln, key)) {
+      const existing = lineFieldValue(ln, key);
+      fail(`이미 [${key}:: ${existing ?? '…'}] 가 있음(${task.file} ${idx + 1}번째 줄)`);
+    }
+    const next = `${pyRstrip(ln)} [${key}:: ${value}]`;
+    // 붙인 필드가 핵심문구에 섞이면(= ID·앵커가 바뀌면) 목록이 그 줄을 다른 할 일로 본다 — 쓰지 않는다
+    if (coreOf(next) !== coreOf(ln) || lineFieldValue(next, key) !== value) {
+      fail(`필드를 붙이면 할 일 줄의 핵심문구가 바뀌어 쓰지 않음: ${task.file}`);
+    }
+    lines[idx] = next;
+    cache.put(f, lines);
+
+    // 쓰기 직전 재확인: 읽은 뒤 파일이 바뀌었으면(OneDrive·Obsidian·open_loops) 다시 읽고 처음부터
+    hooks.beforeRecheck?.({ attempt, files: cache.all().map((x) => x.rel) });
+    if (changedSince(f)) {
+      retryWarnings.push(`저장 직전에 파일이 바뀌어 다시 읽음(${attempt}번째): ${f.rel}`);
+      continue;
+    }
+
+    try {
+      checkWriteAccess(f, sleep);
+    } catch (err) {
+      fail(errCode(err));
+    }
+    let tmp: string | null = null;
+    try {
+      tmp = prepareTemp(f, render(f));
+      writeBackups(root, stamp, [f], backup, none);
+    } catch (err) {
+      if (tmp !== null) removeQuietly(tmp);
+      const msg = errCode(err);
+      fail(msg.startsWith('임시 파일') ? msg : `고치기 전 사본을 만들지 못함(${msg})`);
+    }
+    try {
+      commitTemp(f, tmp as string, hooks);
+    } catch (err) {
+      removeQuietly(tmp as string);
+      if (err instanceof ChangedBeforeRename) {
+        retryWarnings.push(`저장하는 사이에 파일이 바뀌어 다시 읽음(${attempt}번째): ${err.rel}`);
+        continue;
+      }
+      fail(errCode(err));
+    }
+    const out: LineFieldResult = { files: [f.rel], warnings: retryWarnings };
+    if (backup.dirRel !== undefined) out.backupDir = backup.dirRel;
+    return out;
+  }
+  return fail(`파일이 계속 바뀌고 있어 저장하지 못함(${MAX_WRITE_ATTEMPTS}번 다시 읽음)`);
+}
+
+// ---------------------------------------------------------------- 파일 하나 고치기(2.10단계 §7-3 — 메일함 [할 일로])
+
+export interface FileEditInput {
+  /** 마스터 볼트 절대경로 */
+  wikiRoot: string;
+  /** 고칠 파일(볼트 기준 상대경로 — 쓰기 허용 목록 검사를 거친다) */
+  rel: string;
+  /** 백업 폴더 이름에 쓸 시각. 없으면 지금 */
+  now?: Date;
+}
+
+/** 고치기 함수가 이 파일을 고치지 않기로 했다(이미 있음·절 없음 등) — 문장 그대로 던진다(파일은 그대로) */
+export class EditRefusedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'EditRefusedError';
+  }
+}
+
+/**
+ * 파일 하나를 줄 단위로 고친다. edit 은 읽은 줄(복사본)을 받아 새 줄을 돌려주거나 EditRefusedError 를 던진다.
+ * 안전장치는 applyLineField 와 같다: 쓰기 허용 목록, 쓰기 직전 재확인(바뀌었으면 다시 읽고 처음부터 — 모두 3번),
+ * 쓰기로 열어 보기, _todo-sync/backup 백업, 같은 폴더 임시 파일 → 이름 바꾸기, 줄바꿈·BOM 유지. 파일이 없으면 거부한다(만들지 않는다).
+ */
+export function applyFileEditWith(
+  input: FileEditInput,
+  edit: (lines: string[]) => string[],
+  hooks: WritebackHooks = {},
+): LineFieldResult {
+  if (!input || typeof input !== 'object') throw new Error('저장 입력이 없음');
+  if (typeof input.wikiRoot !== 'string' || input.wikiRoot === '') throw new Error('위키 폴더가 지정되지 않음');
+  const root = path.resolve(input.wikiRoot);
+  if (!isDirectory(root)) throw new Error(`위키 폴더를 찾을 수 없음: ${input.wikiRoot}`);
+  const realRoot = fs.realpathSync.native(root);
+  const sleep = hooks.sleep ?? sleepSync;
+  const rel = safeVaultRelative(input.rel);
+  if (rel === null) throw new WriteRefusedError(input.rel, '위키 밖이거나 잘못된 경로');
+  checkWritable(root, realRoot, rel);
+  const stamp = backupStamp(input.now ?? new Date());
+  const retryWarnings: string[] = [];
+  const backup: BackupState = { dirRel: undefined, made: new Map() };
+  const none: ReadonlySet<string> = new Set();
+
+  const fail = (cause: string): never => {
+    pruneBackups(root, backup, none);
+    throw new Error(`${cause} — 아무것도 쓰지 않았음`);
+  };
+
+  for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
+    const cache = new FileCache(root, realRoot, sleep);
+    const f = cache.load(rel);
+    if (f.lines === null) fail(`파일이 없음: ${rel}`);
+    let next: string[];
+    try {
+      next = edit((f.lines as string[]).slice());
+    } catch (err) {
+      pruneBackups(root, backup, none);
+      throw err;
+    }
+    cache.put(f, next);
+    if (next.join('\n') === f.originalText) return { files: [], warnings: retryWarnings };
+
+    hooks.beforeRecheck?.({ attempt, files: cache.all().map((x) => x.rel) });
+    if (changedSince(f)) {
+      retryWarnings.push(`저장 직전에 파일이 바뀌어 다시 읽음(${attempt}번째): ${f.rel}`);
+      continue;
+    }
+    try {
+      checkWriteAccess(f, sleep);
+    } catch (err) {
+      fail(errCode(err));
+    }
+    let tmp: string | null = null;
+    try {
+      tmp = prepareTemp(f, render(f));
+      writeBackups(root, stamp, [f], backup, none);
+    } catch (err) {
+      if (tmp !== null) removeQuietly(tmp);
+      const msg = errCode(err);
+      fail(msg.startsWith('임시 파일') ? msg : `고치기 전 사본을 만들지 못함(${msg})`);
+    }
+    try {
+      commitTemp(f, tmp as string, hooks);
+    } catch (err) {
+      removeQuietly(tmp as string);
+      if (err instanceof ChangedBeforeRename) {
+        retryWarnings.push(`저장하는 사이에 파일이 바뀌어 다시 읽음(${attempt}번째): ${err.rel}`);
+        continue;
+      }
+      fail(errCode(err));
+    }
+    const out: LineFieldResult = { files: [f.rel], warnings: retryWarnings };
+    if (backup.dirRel !== undefined) out.backupDir = backup.dirRel;
+    return out;
   }
   return fail(`파일이 계속 바뀌고 있어 저장하지 못함(${MAX_WRITE_ATTEMPTS}번 다시 읽음)`);
 }

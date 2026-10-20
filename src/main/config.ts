@@ -58,8 +58,59 @@ export interface AppConfig {
    * 둘 다 없으면 null → app.getPath('userData')(resolveDataDir 가 채운다). 2단계 명세 §7
    */
   dataDir: string | null;
+  /**
+   * 앱 시계(2.9단계 §7-2). WIKI_RADAR_NOW 를 주면 그 시각에서 시작해 실제 시간만큼 흐른다(fixed:true) — 이때 오늘도 이 시계에서 나온다.
+   * 없으면 실제 시각
+   */
+  clock: AppClock;
   /** 설정을 읽다 생긴 문제(무시한 값 등). 시작할 때 로그로 남긴다 */
   warnings: string[];
+}
+
+/** 앱 시계. 시험 모드의 __radarTest.setNow 가 옮긴다 */
+export interface AppClock {
+  now(): Date;
+  /** WIKI_RADAR_NOW(또는 set)로 정한 시계인가 */
+  readonly fixed: boolean;
+  /** 시계를 그 시각으로 옮긴다(그 뒤로 실제 시간만큼 흐른다). 모양이 틀리면 거짓 */
+  set(text: string): boolean;
+}
+
+const DATETIME_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
+
+/** 'YYYY-MM-DDTHH:mm[:ss]'(로컬) → Date. 달력·시각에 없는 값이면 null */
+export function parseLocalDateTime(text: string): Date | null {
+  const m = DATETIME_RE.exec(text.trim());
+  if (!m) return null;
+  const [y, mo, d, h, mi, sec] = [m[1], m[2], m[3], m[4], m[5], m[6] ?? '0'].map(Number);
+  if (h > 23 || mi > 59 || sec > 59) return null;
+  const date = new Date(y, mo - 1, d, h, mi, sec, 0);
+  if (date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== d) return null;
+  return date;
+}
+
+/** start 를 주면 그 시각에서 실제 시간만큼 흐르는 시계, 없으면 실제 시각(set 으로 고정 시계가 된다) */
+export function createClock(start: Date | null, realNow: () => number = Date.now): AppClock {
+  let base = start ? start.getTime() : null;
+  let at = realNow();
+  return {
+    now: () => new Date(base === null ? realNow() : base + (realNow() - at)),
+    get fixed() {
+      return base !== null;
+    },
+    set(text: string): boolean {
+      const d = parseLocalDateTime(text);
+      if (!d) return false;
+      base = d.getTime();
+      at = realNow();
+      return true;
+    },
+  };
+}
+
+/** 로컬 시각 'YYYY-MM-DDTHH:mm:ss'(시험 기록·로그용) */
+export function localDateTimeString(d: Date): string {
+  return `${localDateString(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -104,7 +155,7 @@ function readHolidays(warnings: string[]): Holiday[] {
 }
 
 /** 환경 변수에서 설정을 읽는다. env 를 넘기면 그것을 쓴다(시험용). */
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+export function loadConfig(env: NodeJS.ProcessEnv = process.env, realNow: () => number = Date.now): AppConfig {
   const warnings: string[] = [];
 
   const wikiEnv = env.WIKI_RADAR_WIKI?.trim();
@@ -117,13 +168,25 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     else warnings.push(`WIKI_RADAR_TODAY 값이 YYYY-MM-DD 날짜가 아니라 무시함: ${todayEnv}`);
   }
 
+  // 시험 시계(2.9단계 §7-2): WIKI_RADAR_NOW 가 WIKI_RADAR_TODAY 를 이긴다
+  let start: Date | null = null;
+  const nowEnv = env.WIKI_RADAR_NOW?.trim();
+  if (nowEnv) {
+    start = parseLocalDateTime(nowEnv);
+    if (!start) warnings.push(`WIKI_RADAR_NOW 값이 YYYY-MM-DDTHH:mm 시각이 아니라 무시함: ${nowEnv}`);
+    else if (fixedToday && fixedToday !== localDateString(start)) {
+      warnings.push(`WIKI_RADAR_NOW(${nowEnv})와 WIKI_RADAR_TODAY(${fixedToday})의 날짜가 달라 WIKI_RADAR_NOW 를 씀`);
+    }
+  }
+  const clock = createClock(start, realNow);
+
   const userDataEnv = env.WIKI_RADAR_USER_DATA?.trim();
   const userDataDir = userDataEnv ? path.resolve(userDataEnv) : null;
 
   const dataEnv = env.WIKI_RADAR_DATA?.trim();
   const dataDir = dataEnv ? path.resolve(dataEnv) : userDataDir;
 
-  return { wikiRoot, fixedToday, holidays: readHolidays(warnings), userDataDir, dataDir, warnings };
+  return { wikiRoot, fixedToday, holidays: readHolidays(warnings), userDataDir, dataDir, clock, warnings };
 }
 
 /** 데이터 폴더를 정한다. 설정에 없으면 Electron 사용자 데이터 폴더(app.getPath('userData')). */
@@ -173,7 +236,10 @@ export function findClaudePath(env: NodeJS.ProcessEnv = process.env, exists: (p:
   return { path: DEFAULT_CLAUDE_PATH, source: 'default', exists: exists(DEFAULT_CLAUDE_PATH) };
 }
 
-/** 지금 기준의 '오늘'. 고정 날짜가 있으면 그것, 없으면 로컬 오늘. */
-export function currentToday(config: Pick<AppConfig, 'fixedToday'>): string {
+/**
+ * 지금 기준의 '오늘'. 시계를 WIKI_RADAR_NOW(·setNow)로 정했으면 그 시계의 날짜, 아니면 고정 날짜(WIKI_RADAR_TODAY), 없으면 로컬 오늘.
+ */
+export function currentToday(config: Pick<AppConfig, 'fixedToday'> & { clock?: AppClock }): string {
+  if (config.clock?.fixed) return localDateString(config.clock.now());
   return config.fixedToday ?? localDateString();
 }

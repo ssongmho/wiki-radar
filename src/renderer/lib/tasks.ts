@@ -41,7 +41,9 @@ export type IconName =
   | 'user'
   | 'flag'
   | 'mail'
-  | 'memo';
+  | 'memo'
+  | 'ticket'
+  | 'file';
 
 export const BUCKET_ICON: Record<Bucket, IconName> = {
   overdue: 'clock',
@@ -76,6 +78,93 @@ function positive(value: unknown): number | undefined {
 /** 표시 제목. 비어 있으면 '(제목 없음)' */
 export function taskTitle(task: Task): string {
   return textOf(task.title) ?? '(제목 없음)';
+}
+
+// ── VOC 할 일(2.6단계 명세 §5 — 내 담당 진행 중 VOC 티켓. 위키에 줄이 없다) ──
+
+/** VOC 할 일인가(처리 결과 폼 대신 VOC 처리를 보인다) */
+export function isVocTask(task: Task): boolean {
+  return task.source === 'voc';
+}
+
+/** VOC 상태 원문 → 화면 이름(voc-cli 의 7가지 — VOC 화면 lib/voc.ts 와 같은 이름). 모르는 값은 원문 그대로 */
+export const VOC_STATUS_LABEL: Readonly<Record<string, string>> = {
+  new: '신규',
+  assigned: '배정됨',
+  in_progress: '진행 중',
+  pending: '보류',
+  resolved: '해결',
+  closed: '완료',
+  withdrawn: '철회',
+};
+
+export function vocStatusLabel(status: unknown): string {
+  const s = textOf(status);
+  if (!s) return '상태 없음';
+  return Object.hasOwn(VOC_STATUS_LABEL, s) ? VOC_STATUS_LABEL[s] : s;
+}
+
+/** VOC 할 일의 티켓 번호(없거나 비었으면 undefined) */
+export function vocNumberOf(task: Task): string | undefined {
+  return isVocTask(task) ? textOf(task.voc?.number) : undefined;
+}
+
+/** 목록 줄·상세의 VOC 칩 글자: 번호('VOC-2026-0012'), 번호가 VOC 로 시작하지 않으면 앞에 'VOC ', 번호가 없으면 'VOC' */
+export function vocChipText(task: Task): string | undefined {
+  if (!isVocTask(task)) return undefined;
+  const number = vocNumberOf(task);
+  if (!number) return 'VOC';
+  return /^VOC/i.test(number) ? number : `VOC ${number}`;
+}
+
+/** SLA 표식(초과·임박만 — 정상·없음은 undefined) */
+export function vocSlaMark(sla: unknown): { text: string; tone: 'coral' | 'amber' } | undefined {
+  if (sla === 'exceeded') return { text: 'SLA 초과', tone: 'coral' };
+  if (sla === 'warning') return { text: 'SLA 임박', tone: 'amber' };
+  return undefined;
+}
+
+// ── 팀 위키 할 일(2.9단계 명세 §3·§4-2 — 팀 사본의 체크박스 줄. 담당은 team.owners) ──
+
+/** 팀 위키 할 일인가(처리 결과 입력 대신 팀 할 일 입력을 보인다) */
+export function isTeamTask(task: Task): boolean {
+  return task.source === 'team';
+}
+
+/** 줄의 출처(data-source): 팀 위키 · 개인 위키(큐레이션·체크박스) · VOC */
+export function sourceKind(task: Task): 'team' | 'personal' | 'voc' {
+  if (task.source === 'team') return 'team';
+  if (task.source === 'voc') return 'voc';
+  return 'personal';
+}
+
+/** 팀 할 일의 문서 이름(없으면 파일 이름에서) */
+export function teamDocOf(task: Task): string | undefined {
+  if (!isTeamTask(task)) return undefined;
+  const doc = textOf(task.team?.doc);
+  if (doc) return doc;
+  const file = textOf(task.team?.file) ?? textOf(task.file);
+  return file ? file.slice(file.lastIndexOf('/') + 1).replace(/\.md$/i, '') : undefined;
+}
+
+/** 팀 할 일의 담당(줄에 적힌 표기, 비면 []) */
+export function teamOwnersOf(task: Task): string[] {
+  const owners = task.team?.owners;
+  return Array.isArray(owners) ? owners.filter((o): o is string => typeof o === 'string' && o.trim() !== '') : [];
+}
+
+/**
+ * 할 일 줄 제목 앞 출처 칩 글자(§4-2). 사이드바는 팀 할 일에만 "팀" 한 글자, 풀스크린은 목록이 섞일 때(팀 동기화가 켜졌을 때)만
+ * 팀 "팀 · 문서이름" · 개인 "개인". VOC 할 일은 번호 칩이 따로 있어 없음
+ */
+export function sourceChipText(task: Task, variant: 'sidebar' | 'full', mixed: boolean): string | undefined {
+  const kind = sourceKind(task);
+  if (kind === 'voc') return undefined;
+  if (variant === 'sidebar') return kind === 'team' ? '팀' : undefined;
+  if (!mixed) return undefined;
+  if (kind === 'personal') return '개인';
+  const doc = teamDocOf(task);
+  return doc ? `팀 · ${doc}` : '팀';
 }
 
 export function bucketOf(task: Task): Bucket {
@@ -168,6 +257,14 @@ export function rowMeta(task: Task): MetaItem[] {
   } else if (chase !== undefined) {
     items.push({ key: 'chase', text: `재촉 ${chase}`, tone: 'coral', icon: 'chase' });
   }
+  if (isVocTask(task)) {
+    // VOC 할 일은 할 일 상태(wip) 대신 VOC 상태를 보인다 — 보류(pending)도 wip 이지만 '진행 중'이 아니다
+    const status = textOf(task.voc?.status);
+    if (status) items.push({ key: 'voc-status', text: vocStatusLabel(status), tone: status === 'in_progress' ? 'amber' : undefined });
+    const sla = vocSlaMark(task.voc?.slaStatus);
+    if (sla) items.push({ key: 'voc-sla', text: sla.text, tone: sla.tone });
+    return items;
+  }
   if (task.status === 'wip') items.push({ key: 'wip', text: '진행 중', tone: 'amber' });
   return items;
 }
@@ -179,12 +276,19 @@ export interface Chip {
   text: string;
   icon: IconName;
   tone?: 'coral' | 'amber';
+  /** 시험 식별자(VOC 칩 task-voc-chip) */
+  testId?: string;
 }
 
 export function detailChips(task: Task, today: string): Chip[] {
   const chips: Chip[] = [];
   const refYear = yearOf(today);
   const bucket = bucketOf(task);
+  const voc = isVocTask(task);
+  const vocChip = vocChipText(task);
+  if (vocChip) chips.push({ key: 'voc', text: vocChip, icon: 'ticket', testId: 'task-voc-chip' });
+  const teamFile = isTeamTask(task) ? (textOf(task.team?.file) ?? textOf(task.file)) : undefined;
+  if (teamFile) chips.push({ key: 'team', text: `팀 위키 · ${teamFile}`, icon: 'file', testId: 'task-team-chip' });
   const company = textOf(task.company);
   if (company) chips.push({ key: 'company', text: company, icon: 'building' });
 
@@ -215,12 +319,30 @@ export function detailChips(task: Task, today: string): Chip[] {
   if (chase !== undefined) chips.push({ key: 'chase', text: `재촉 ${chase}회`, icon: 'chase' });
   const openDays = numberOf(task.openDays);
   if (openDays !== undefined) chips.push({ key: 'open', text: `열림 ${openDays}영업일`, icon: 'hourglass' });
-  if (task.status === 'wip') chips.push({ key: 'wip', text: '진행 중', icon: 'progress', tone: 'amber' });
+  if (voc) {
+    // VOC 상태 원문(보류도 wip 이지만 '진행 중'이 아니다)과 SLA 초과·임박
+    const status = textOf(task.voc?.status);
+    if (status) {
+      chips.push({
+        key: 'voc-status',
+        text: `VOC ${vocStatusLabel(status)}`,
+        icon: 'progress',
+        tone: status === 'in_progress' ? 'amber' : undefined,
+      });
+    }
+    const sla = vocSlaMark(task.voc?.slaStatus);
+    if (sla) chips.push({ key: 'voc-sla', text: sla.text, icon: 'clock', tone: sla.tone });
+  } else if (task.status === 'wip') chips.push({ key: 'wip', text: '진행 중', icon: 'progress', tone: 'amber' });
   // [st:: 값] — 줄에 적힌 진행 메모(진행·확인·협의…). 상태에는 영향이 없다(2단계 §4).
   const st = textOf(task.st);
   if (st) chips.push({ key: 'st', text: `메모 상태: ${st}`, icon: 'memo' });
   const owner = textOf(task.owner);
   if (owner) chips.push({ key: 'owner', text: `담당 ${owner}`, icon: 'user' });
+  if (isTeamTask(task)) {
+    // 팀 위키 할 일: 문서 경로와 담당(여럿이면 ', ') — 담당은 "내 일 아님"이 아니다(§3)
+    const owners = teamOwnersOf(task);
+    chips.push({ key: 'team-owner', text: owners.length > 0 ? `담당 ${owners.join(', ')}` : '미배정', icon: 'user', tone: owners.length === 0 ? 'amber' : undefined });
+  }
   const pri = numberOf(task.pri);
   if (pri !== undefined) chips.push({ key: 'pri', text: `우선 P${pri}`, icon: 'flag' });
   const opened = parseYmd(task.opened) ? task.opened : undefined;

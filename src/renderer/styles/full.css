@@ -7,6 +7,63 @@
   background: var(--bg);
 }
 
+/* ── 창 맨 위 막대(끌어서 창 옮기기 · 오른쪽 160px 은 Windows 창 단추 자리) ── */
+.full-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--nav);
+}
+
+.full-frame > .full {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+.titlebar {
+  flex: 0 0 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 160px 0 18px;
+  background: var(--nav);
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--text-3);
+  user-select: none;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.titlebar-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 0 3px var(--amber-bg);
+}
+
+.titlebar-app {
+  color: var(--text-2);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.titlebar-version {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.titlebar-sep {
+  color: var(--line-strong);
+}
+
+.titlebar-page {
+  color: var(--text);
+  font-weight: 600;
+}
+
 /* ── 내비 ── */
 .fv-nav {
   min-height: 0;
@@ -772,4 +829,1209 @@ button.link-row:hover .link-row-name {
   line-height: 1.5;
   color: var(--amber);
   overflow-wrap: anywhere;
+}
+
+/* ── 설정 › 점검(2.7단계 환경 점검): 위키가 없을 때의 할 일 화면 · 점검 화면 ── */
+.fv-state--stack {
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.fv-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.nav-item--setup {
+  margin-top: 2px;
+}
+
+.setup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setup-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.setup-item.is-off {
+  border-color: var(--coral-line);
+}
+
+.setup-item.is-warn {
+  border-color: var(--amber-line);
+}
+
+.setup-mark {
+  flex-shrink: 0;
+  display: inline-flex;
+  padding-top: 2px;
+  color: var(--text-3);
+}
+
+.setup-item.is-ok .setup-mark {
+  color: var(--cyan);
+}
+
+.setup-item.is-off .setup-mark {
+  color: var(--coral);
+}
+
+.setup-item.is-warn .setup-mark {
+  color: var(--amber);
+}
+
+.setup-body {
+  min-width: 0;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setup-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.setup-title {
+  font-size: var(--fs-15);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.setup-state {
+  font-size: var(--fs-12);
+  font-weight: 700;
+  color: var(--text-3);
+}
+
+.setup-item.is-ok .setup-state {
+  color: var(--cyan);
+}
+
+.setup-item.is-off .setup-state {
+  color: var(--coral);
+}
+
+.setup-item.is-warn .setup-state {
+  color: var(--amber);
+}
+
+.setup-detail {
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.setup-path {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  overflow-wrap: anywhere;
+}
+
+.setup-effect {
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+.setup-effect strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 4px;
+}
+
+.setup-command {
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: var(--fs-12-5);
+  color: var(--text);
+  user-select: all;
+}
+
+/* ── 2.8단계: 팀 위키 동기화(설정 › 점검 칸) ── */
+.ts-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.ts-fields .text-input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: var(--fs-12-5);
+}
+
+.ts-pending,
+.ts-conflicts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius);
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.ts-pending strong {
+  color: var(--amber);
+  font-weight: 700;
+}
+
+.ts-sample {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.ts-recent summary {
+  cursor: pointer;
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+.ts-recent .ts-sample {
+  margin-top: 6px;
+}
+
+.ts-dir {
+  font-family: var(--font);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ts-ago {
+  color: var(--text-3);
+}
+
+/* ── 2.9단계: 내비 묶음 · 쓸 수 없는 메뉴 · 설정 칸 탭 ── */
+.nav-group-title {
+  margin: 14px 0 4px;
+  padding: 0 12px;
+  font-size: var(--fs-11);
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+/* 쓸 수 없는 메뉴: 숨기지 않고 흐리게(누르면 그 화면이 이유를 보인다) */
+.nav-item.is-unavailable,
+.nav-item.is-unavailable .nav-item-count {
+  color: var(--text-3);
+}
+
+.nav-item.is-unavailable[aria-current='page'] {
+  color: var(--text-2);
+}
+
+.sv-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sv-tab {
+  height: var(--hit);
+  margin-bottom: -1px;
+  padding: 0 16px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-size: var(--fs-13-5);
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.sv-tab:hover {
+  color: var(--text);
+}
+
+.sv-tab.is-selected {
+  border-bottom-color: var(--amber);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sv-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sv-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 560px;
+}
+
+.sv-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-13-5);
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.sv-preview strong {
+  font-weight: 700;
+  color: var(--amber);
+}
+
+.sv-preview-names {
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  overflow-wrap: anywhere;
+}
+
+/* ── 할 일 탭 [내 할 일 | 팀 전체](2.9단계 §4-1) ── */
+.fv-list-head .tasks-tabs {
+  margin: -8px -4px 2px;
+}
+
+.tv-head .tasks-tabs {
+  border-bottom: 0;
+}
+
+.personal-missing {
+  padding: 6px 10px;
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius);
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+/* ── 팀 전체 화면: 머리 | 담당 칸 | 할 일 | 상세(VOC 화면과 같은 틀 .vv) ── */
+.tv-head .vv-head-text {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tv-totals {
+  margin: 0;
+}
+
+.tv-list .fv-list-body {
+  padding-top: 8px;
+}
+
+.tv-note {
+  margin: 10px 12px 0;
+  font-size: var(--fs-12-5);
+  color: var(--text-3);
+}
+
+.tv-detail {
+  grid-column: 3;
+  grid-row: 3;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.tv-detail > .fv-detail {
+  flex: 1 1 auto;
+}
+
+/* 팀 할 일 입력: 글자 칸 + 단추 한 줄 */
+.team-form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.team-form-row .text-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.team-form-row .btn {
+  flex-shrink: 0;
+}
+
+.team-form-date {
+  max-width: 200px;
+  color-scheme: dark;
+}
+
+.aside-team-owner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-13);
+  color: var(--text-2);
+}
+
+/* ── 알림함(2.9단계 §8-1): 제목 막대 오른쪽 종 + 아래로 펼치는 판 ── */
+.titlebar {
+  position: relative;
+}
+
+.titlebar-deco {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.inbox {
+  position: absolute;
+  top: 0;
+  /* 창 단추(Window Controls Overlay) 바로 왼쪽. 값이 없으면 오른쪽 140px 띄움 */
+  right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100vw - 140px)));
+  height: 36px;
+  display: flex;
+  align-items: center;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  z-index: 40;
+}
+
+.inbox-bell {
+  position: relative;
+  width: 36px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+}
+
+.inbox-bell:hover,
+.inbox-bell.is-open {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.inbox-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--line-strong);
+  color: var(--text);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.inbox-badge.is-urgent {
+  background: var(--coral);
+  color: var(--on-amber);
+}
+
+.inbox-panel {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  width: 380px;
+  max-height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  color: var(--text-2);
+  font-size: var(--fs-13);
+  user-select: text;
+}
+
+.inbox-panel:focus {
+  outline: none;
+}
+
+.inbox-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.inbox-heading {
+  margin: 0;
+  font-size: var(--fs-13-5);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.inbox-toasts {
+  flex: 1;
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+.inbox-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  padding: 6px 10px 6px 14px;
+  background: var(--amber-bg);
+  border-bottom: 1px solid var(--amber-line);
+  color: var(--text);
+  font-size: var(--fs-12-5);
+}
+
+.inbox-notice > span {
+  flex: 1 1 100%;
+}
+
+.inbox-error {
+  margin: 8px 14px;
+}
+
+.inbox-empty {
+  margin: 0;
+  padding: 24px 14px;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.inbox-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.inbox-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px 6px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.inbox-item:last-child {
+  border-bottom: 0;
+}
+
+.inbox-mark {
+  flex-shrink: 0;
+  padding-top: 6px;
+  color: var(--amber);
+}
+
+.inbox-item.is-urgent .inbox-mark {
+  color: var(--coral);
+}
+
+.inbox-item:not(.is-unread) .inbox-mark {
+  opacity: 0.4;
+}
+
+.inbox-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.inbox-title {
+  margin: 0;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.inbox-item.is-unread .inbox-title {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.inbox-body {
+  margin: 2px 0 0;
+  color: var(--text-body);
+  font-size: var(--fs-12-5);
+  overflow-wrap: anywhere;
+}
+
+.inbox-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+.inbox-tag {
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-2);
+}
+
+.inbox-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: -8px;
+}
+
+.btn--ghost {
+  background: transparent;
+  border: 0;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.btn--ghost:hover {
+  color: var(--cyan);
+}
+
+.btn--sm {
+  height: 32px;
+  padding: 0 8px;
+  gap: 6px;
+  font-size: var(--fs-12-5);
+}
+
+/* ── 설정 › 알림(2.9단계 §8-4) ── */
+.notify-kind {
+  margin: 0;
+}
+
+.notify-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.notify-time-input {
+  width: 140px;
+}
+
+/* ---- 알림함 N2(2.12단계 §10): 보류 줄 · 나중에 묶음 · [나중에] 선택 ---------------- */
+.inbox-scroll {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.inbox-scroll .inbox-list {
+  overflow: visible;
+}
+
+.inbox-held {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 12px 6px 14px;
+  background: var(--amber-bg);
+  border-bottom: 1px solid var(--amber-line);
+  color: var(--text);
+  font-size: var(--fs-12-5);
+}
+
+.inbox-held svg {
+  flex-shrink: 0;
+  color: var(--amber);
+}
+
+.inbox-snoozed-count {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+.inbox-item {
+  position: relative;
+}
+
+.inbox-item.is-snoozed {
+  opacity: 0.6;
+}
+
+.inbox-tag.is-reminded {
+  border-color: var(--coral-line);
+  color: var(--coral);
+}
+
+.inbox-snooze-menu {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 200px;
+  margin: 4px 0 6px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.inbox-snooze-option {
+  padding: 6px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-12-5);
+  text-align: left;
+  cursor: pointer;
+}
+
+.inbox-snooze-option:hover,
+.inbox-snooze-option:focus-visible {
+  background: var(--selected);
+  outline: none;
+}
+
+.inbox-snoozed {
+  border-top: 1px solid var(--line);
+}
+
+.inbox-snoozed-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: 0;
+  color: var(--text-3);
+  font: inherit;
+  font-size: var(--fs-12);
+  text-align: left;
+  cursor: pointer;
+}
+
+.inbox-snoozed-toggle:hover {
+  color: var(--text-2);
+}
+
+/* 설정 › 알림 N2: 조용한 시간 · 창 닫기 */
+.notify-quiet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+
+/* ── 설정: 왼쪽 세로 칸 목록 9칸(2.13단계 §C-0) ── */
+.sv-inner {
+  max-width: 1080px;
+}
+
+.sv-layout {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.sv-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 12px;
+  border-right: 1px solid var(--line);
+}
+
+.sv-nav .sv-tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 38px;
+  margin: 0;
+  padding: 0 12px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  text-align: left;
+}
+
+.sv-nav .sv-tab:hover {
+  background: var(--panel);
+}
+
+.sv-nav .sv-tab.is-selected {
+  background: var(--selected);
+  border-left-color: var(--amber);
+}
+
+.sv-tab-dot {
+  flex: none;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+.sv-body {
+  min-width: 0;
+}
+
+.sv-form--wide {
+  max-width: 720px;
+}
+
+.sv-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.sv-row > .sv-field {
+  flex: 0 1 140px;
+}
+
+.sv-row > .sv-field--wide {
+  flex: 1 1 280px;
+}
+
+/* 필드: 출처가 팀 기본값이면 점선, 환경 변수면 잠금 */
+.sv-field {
+  min-width: 0;
+}
+
+.sv-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sv-field-row > .text-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sv-input--num {
+  max-width: 120px;
+}
+
+.sv-field.is-team .text-input,
+.sv-field.is-team .check-card {
+  border-style: dashed;
+  border-color: var(--line-strong);
+}
+
+.sv-field[data-locked='env'] .text-input,
+.sv-field[data-locked='env'] .check-card {
+  background: var(--nav);
+}
+
+.sv-select {
+  max-width: 260px;
+}
+
+.sv-textarea {
+  height: auto;
+  min-height: 108px;
+  padding: 10px 12px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.sv-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+}
+
+.sv-source .link-btn {
+  min-height: 24px;
+  font-size: var(--fs-12);
+}
+
+.sv-warn {
+  color: var(--amber);
+}
+
+.sv-muted {
+  color: var(--text-3);
+}
+
+.sv-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sv-secret-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 140px;
+  font-size: var(--fs-13);
+  color: var(--text-2);
+}
+
+.sv-secret[data-saved='true'] .sv-secret-state {
+  color: var(--text);
+}
+
+.sv-team {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--fs-12-5);
+  color: var(--text-3);
+}
+
+.sv-team-line {
+  margin: 0;
+}
+
+.sv-team-problem {
+  margin: 0;
+  padding: 6px 10px;
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius-sm);
+  color: var(--amber);
+}
+
+.sv-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--fs-12-5);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.sv-fixed {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--text-2);
+}
+
+.sv-collect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.sv-collect .sv-field {
+  flex: 1 1 320px;
+}
+
+.sv-collect-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sv-chip-muted {
+  height: 24px;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+}
+
+.sv-dotenv,
+.sv-restart,
+.sv-import {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.sv-restart {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--amber-bg);
+  border-color: var(--amber-line);
+  font-size: var(--fs-13);
+  color: var(--amber);
+}
+
+.sv-import-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 바닥: [저장] [되돌리기] [연결 시험] · 상태 글 · 시험 결과 */
+.sv-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.sv-footer .qv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sv-status {
+  margin: 0;
+  font-size: var(--fs-12-5);
+  color: var(--text-3);
+}
+
+.sv-status.is-ok {
+  color: var(--cyan);
+}
+
+.sv-status.is-error {
+  color: var(--coral);
+}
+
+.sv-test {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.sv-test.is-fail {
+  border-color: var(--coral-line);
+}
+
+.sv-test-head {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sv-test.is-fail .sv-test-head {
+  color: var(--coral);
+}
+
+.sv-test-ms {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--text-3);
+}
+
+.sv-test-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sv-test-step {
+  display: grid;
+  grid-template-columns: 18px 72px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+.sv-test-mark {
+  align-self: center;
+  display: inline-flex;
+}
+
+.sv-test-step.is-ok .sv-test-mark {
+  color: var(--cyan);
+}
+
+.sv-test-step.is-warn .sv-test-mark {
+  color: var(--amber);
+}
+
+.sv-test-step.is-fail .sv-test-mark,
+.sv-test-step.is-fail .sv-test-detail {
+  color: var(--coral);
+}
+
+.sv-test-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sv-test-detail {
+  overflow-wrap: anywhere;
+}
+
+/* AI 용도 표 · 정보 목록 */
+.sv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+.sv-table th,
+.sv-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.sv-table thead th {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.sv-table tbody th {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.sv-table .radio-cards,
+.sv-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sv-outside.is-out {
+  color: var(--coral);
+}
+
+.sv-dl {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 0;
+  font-size: var(--fs-13);
+}
+
+.sv-dl dt {
+  color: var(--text-3);
+}
+
+.sv-dl dd {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.sv-path {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12-5);
+}
+
+.setup-fix {
+  margin-top: 2px;
+}
+
+.vv-settings-body.vv-settings-body--inline {
+  max-height: none;
+  margin-right: 0;
+  padding-right: 0;
+  overflow: visible;
+}
+
+/* 칸 안(세로 .field)에서는 고르기 칸이 세로로 늘지 않게 */
+.vv-settings-body--inline .field > .vv-select {
+  flex: none;
+}
+
+.reply-settings-link {
+  min-height: 28px;
+}
+
+.draft-engine {
+  color: var(--text-3);
+}
+
+@media (max-width: 900px) {
+  .sv-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sv-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-right: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+/* ── 반영 대기: 메일 항목(2.14 §9) ── */
+.queue-item-source .link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.queue-item-blocked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: var(--coral);
+  font-size: var(--fs-12-5);
+}
+
+.dialog-outside {
+  padding: 6px 10px;
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius-xs);
+  background: var(--amber-bg);
+  color: var(--amber);
 }

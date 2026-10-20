@@ -53,7 +53,7 @@ export function normalizeSnapshot(raw: unknown, now: Date = new Date()): Snapsho
   const counts = Object.fromEntries(
     BUCKETS.map((b) => [b, numberOf(rawCounts[b]) ?? groups[b].length]),
   ) as Record<Bucket, number>;
-  return {
+  const out: Snapshot = {
     generatedAt: textOf(raw.generatedAt) ?? '',
     wikiRoot: textOf(raw.wikiRoot) ?? '',
     week: normalizeWeek(raw.week, localYmd(now)),
@@ -63,6 +63,9 @@ export function normalizeSnapshot(raw: unknown, now: Date = new Date()): Snapsho
     warnings: Array.isArray(raw.warnings) ? raw.warnings.filter((w): w is string => typeof w === 'string') : [],
     partial: raw.partial === true,
   };
+  // 개인 위키 없이 팀 위키 할 일만으로 만든 것(2.9단계 §3)
+  if (raw.personalMissing === true) out.personalMissing = true;
+  return out;
 }
 
 /** 두 스냅샷 중 더 새로 만든 것. 만든 시각을 모르면 나중에 받은 것을 쓴다. */

@@ -107,7 +107,8 @@ describe('파일 형식', () => {
     fs.rmSync(at(root, '_private/mgmt/할 일 메모.md'));
     const s = build(root);
     expect(s.tasks.filter((t) => t.memo)).toEqual([]);
-    expect(s.pageCount).toBe(7);
+    // 3a단계 fixture(log·index·가상 문서 3개·templates·.claude) 포함 — 1단계 pageCount 규칙은 templates/·.claude/ 도 센다
+    expect(s.pageCount).toBe(14);
   });
 
   it('앵커 파일 이름에 .md 가 빠져 있어도 찾는다', () => {
@@ -335,11 +336,11 @@ describe('볼트 훑기', () => {
     }
     expect(w.files).toContain('wiki/raw-notes/n.md');
     expect(w.files.filter((f) => isInExcludedDir(f))).toEqual([]);
-    expect(w.files).toHaveLength(9);
+    expect(w.files).toHaveLength(16);
     spy.mockRestore();
 
     const s = build(root);
-    expect(s.pageCount).toBe(9);
+    expect(s.pageCount).toBe(16);
     expect(s.tasks.filter((t) => t.title.includes('잡히면 안 된다'))).toEqual([]);
   });
 
@@ -347,14 +348,21 @@ describe('볼트 훑기', () => {
     const w = walkMarkdown(FIXTURE);
     expect(w.errors).toEqual([]);
     expect(w.files).toEqual([
+      '.claude/commands/x.md',
       '_private/business/계약관리시스템.md',
       '_private/mgmt/내 할 일.md',
       '_private/mgmt/업무 현황 종합 분석.md',
+      '_private/mgmt/연간 목표.md',
       '_private/mgmt/할 일 메모.md',
+      'index.md',
+      'log.md',
+      'templates/문서 틀.md',
+      'wiki/entities/대륙물산.md',
       'wiki/entities/서진화학.md',
       'wiki/entities/한결케미칼.md',
       'wiki/entities/해온정밀.md',
       'wiki/topics/dev/CMS 인벤토리 사용량 집계.md',
+      'wiki/topics/dev/배치 마감 경계 조건.md',
     ]);
   });
 });

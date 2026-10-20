@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DEFAULT_CLAUDE_PATH, findClaudePath } from '../../src/main/config';
+import { DEFAULT_CLAUDE_PATH, currentToday, findClaudePath, loadConfig, localDateTimeString, parseLocalDateTime } from '../../src/main/config';
 
 const temps: string[] = [];
 const EXE = process.platform === 'win32' ? 'claude.exe' : 'claude';
@@ -74,5 +74,33 @@ describe('findClaudePath', () => {
   it('PATH 조각의 따옴표를 벗기고, 이름이 Path 여도 읽는다', () => {
     const { dir, exe } = binDir();
     expect(findClaudePath({ Path: `"${dir}"` })).toEqual({ path: exe, source: 'path', exists: true });
+  });
+});
+
+describe('시험 시계 WIKI_RADAR_NOW(2.9단계 §7-2)', () => {
+  it('주면 그 시각에서 실제 시간만큼 흐르고, 오늘도 이 시계에서 나온다(WIKI_RADAR_TODAY 를 이긴다)', () => {
+    let real = 1_000_000;
+    const cfg = loadConfig({ WIKI_RADAR_NOW: '2026-09-23T14:00', WIKI_RADAR_TODAY: '2026-09-20' }, () => real);
+    expect(cfg.clock.fixed).toBe(true);
+    expect(localDateTimeString(cfg.clock.now())).toBe('2026-09-23T14:00:00');
+    real += 65_000;
+    expect(localDateTimeString(cfg.clock.now())).toBe('2026-09-23T14:01:05');
+    expect(currentToday(cfg)).toBe('2026-09-23');
+    expect(cfg.warnings.some((w) => /날짜가 달라 WIKI_RADAR_NOW 를 씀/.test(w))).toBe(true);
+    // setNow 처럼 옮긴다
+    expect(cfg.clock.set('2026-09-28T09:00:30')).toBe(true);
+    expect(localDateTimeString(cfg.clock.now())).toBe('2026-09-28T09:00:30');
+    expect(currentToday(cfg)).toBe('2026-09-28');
+    expect(cfg.clock.set('nope')).toBe(false);
+  });
+
+  it('잘못된 값은 경고하고 버린다. WIKI_RADAR_TODAY 만 주면 그 날짜 + 실제 시각', () => {
+    const bad = loadConfig({ WIKI_RADAR_NOW: '2026-02-30T10:00', WIKI_RADAR_TODAY: '2026-09-23' });
+    expect(bad.clock.fixed).toBe(false);
+    expect(bad.warnings.some((w) => /WIKI_RADAR_NOW 값이/.test(w))).toBe(true);
+    expect(currentToday(bad)).toBe('2026-09-23');
+    expect(parseLocalDateTime('2026-09-23T24:00')).toBeNull();
+    expect(parseLocalDateTime('2026-09-23T09:05')?.getMinutes()).toBe(5);
+    expect(parseLocalDateTime('2026-09-23 09:05')).toBeNull();
   });
 });

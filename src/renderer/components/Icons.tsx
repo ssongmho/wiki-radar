@@ -80,6 +80,20 @@ export const IconBell = (p: IconProps) => (
   </Svg>
 );
 
+/** 알림 등급 표식(채운 점 — 색은 currentColor: 긴급 코랄 · 오늘 앰버) */
+export const IconDot = ({ size = 8, className }: IconProps) => (
+  <svg
+    className={className ? `icon ${className}` : 'icon'}
+    width={size}
+    height={size}
+    viewBox="0 0 8 8"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <circle cx="4" cy="4" r="4" fill="currentColor" />
+  </svg>
+);
+
 /** 오래 열림(보관함) */
 export const IconArchive = (p: IconProps) => (
   <Svg {...p}>
@@ -160,6 +174,53 @@ export const IconMail = (p: IconProps) => (
   <Svg {...p}>
     <rect x="3" y="5" width="18" height="14" rx="2" />
     <path d="M3 7l9 6 9-6" />
+  </Svg>
+);
+
+/** 첨부(클립 — 시안 Mail-1) */
+export const IconAttach = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7" />
+  </Svg>
+);
+
+/** 검색 */
+export const IconSearch = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M20 20l-3.5-3.5" />
+  </Svg>
+);
+
+/** 뒤로(메일로 돌아가기) */
+export const IconBack = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M15 6l-6 6 6 6" />
+  </Svg>
+);
+
+/** 더 보기(…) */
+export const IconMore = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M5 12h.01" />
+    <path d="M12 12h.01" />
+    <path d="M19 12h.01" />
+  </Svg>
+);
+
+/** 받은편지함으로 되돌리기 */
+export const IconInbox = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 13h5l1.5 3h5l1.5-3h5" />
+    <path d="M5 5h14l2 8v6H3v-6z" />
+  </Svg>
+);
+
+/** 되돌리기 */
+export const IconUndo = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M9 14L4 9l5-5" />
+    <path d="M4 9h11a5 5 0 0 1 0 10h-3" />
   </Svg>
 );
 
@@ -275,8 +336,151 @@ export const IconCheck = (p: IconProps) => (
   </Svg>
 );
 
-/** 이름으로 고르는 아이콘(구간 머리·칩) */
-export const ICONS: Record<IconName, (p: IconProps) => ReactElement> = {
+/** 보내기(종이비행기) — [보내고 저장]·[보내기]·지난 발송 */
+export const IconSend = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M21 3L10 14" />
+    <path d="M21 3l-6.5 18-4.5-7-7-4.5z" />
+  </Svg>
+);
+
+/** 회신(돌아가는 화살표를 얹은 봉투) — '회신 메일 보내기' */
+export const IconReply = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7" />
+    <path d="M3 7l9 6 9-6" />
+    <path d="M18 15l-3 3 3 3" />
+    <path d="M15 18h4a2 2 0 0 0 2-2v-1" />
+  </Svg>
+);
+
+/** 초안 쓰기(펜) */
+export const IconPen = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" />
+    <path d="M13.5 6.5l4 4" />
+  </Svg>
+);
+
+/** 멈춤(네모) */
+export const IconStop = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="6" y="6" width="12" height="12" rx="1.5" />
+  </Svg>
+);
+
+/** VOC(헤드셋 — 고객 문의 창구) — 내비·사이드바의 VOC */
+export const IconVoc = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 13v-1a9 9 0 0 1 18 0v1" />
+    <rect x="3" y="13" width="4" height="6" rx="1.5" />
+    <rect x="17" y="13" width="4" height="6" rx="1.5" />
+    <path d="M19 19a3 3 0 0 1-3 3h-3" />
+  </Svg>
+);
+
+/** VOC 티켓(표) — 티켓 번호·VOC 칩 */
+export const IconTicket = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 8a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 0 0 0 4v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a2 2 0 0 0 0-4z" />
+    <path d="M14 7v2" />
+    <path d="M14 11v2" />
+    <path d="M14 15v2" />
+  </Svg>
+);
+
+/** 담당 지정(사람 + 더하기) */
+export const IconAssign = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="10" cy="8" r="4" />
+    <path d="M2.5 21a7.5 7.5 0 0 1 12.2-5.8" />
+    <path d="M19 15v6" />
+    <path d="M16 18h6" />
+  </Svg>
+);
+
+/** 설정(톱니바퀴) */
+export const IconSettings = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+  </Svg>
+);
+
+/** 웹에서 열기(지구) — [VOC 에서 열기] */
+export const IconWeb = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18" />
+    <path d="M12 3a14 14 0 0 1 0 18" />
+    <path d="M12 3a14 14 0 0 0 0 18" />
+  </Svg>
+);
+
+/** 복사(겹친 네모) — 로그인 명령 복사 */
+export const IconCopy = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="9" y="9" width="12" height="12" rx="2" />
+    <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+  </Svg>
+);
+
+/** 로그인(문으로 들어가는 화살표) — VOC [로그인] */
+export const IconLogin = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+    <path d="M10 17l5-5-5-5" />
+    <path d="M15 12H3" />
+  </Svg>
+);
+
+/** 내려받기(아래 화살표 + 받침) — VOC 첨부 */
+export const IconDownload = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 4v11" />
+    <path d="M7 10l5 5 5-5" />
+    <path d="M5 20h14" />
+  </Svg>
+);
+
+/** 폴더 — 폴더에서 보기 */
+export const IconFolder = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+  </Svg>
+);
+
+/** 그림 — 이미지 첨부 [보기] */
+export const IconImage = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <circle cx="9" cy="10" r="1.6" />
+    <path d="M21 16l-5-5-9 8" />
+  </Svg>
+);
+
+/** 위키 변경(3a단계): 겹친 문서 두 장 + 점 */
+export const IconChanges = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3H15l4 4v9.5a1.5 1.5 0 0 1-1.5 1.5H16" />
+    <path d="M4 9.5A1.5 1.5 0 0 1 5.5 8H11l4 4v7.5a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 4 19.5z" />
+    <circle cx="9.5" cy="16" r="1.4" />
+  </Svg>
+);
+
+/** 비공개(자물쇠) */
+export const IconLock = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </Svg>
+);
+
+/**
+ * 이름으로 고르는 아이콘 표. IconName(lib/tasks.ts)에 아직 없는 이름(voc·ticket 등)도 미리 넣어 둔다 —
+ * 표를 먼저 만들고 Record<IconName, …> 에 담으므로, IconName 에 이 표의 이름이 늘어나도 타입 검사가 깨지지 않는다.
+ */
+const ICON_TABLE = {
   clock: IconClock,
   calendar: IconCalendar,
   bell: IconBell,
@@ -290,7 +494,23 @@ export const ICONS: Record<IconName, (p: IconProps) => ReactElement> = {
   flag: IconFlag,
   mail: IconMail,
   memo: IconMemo,
+  voc: IconVoc,
+  ticket: IconTicket,
+  assign: IconAssign,
+  settings: IconSettings,
+  web: IconWeb,
+  copy: IconCopy,
+  refresh: IconRefresh,
+  alert: IconAlert,
+  external: IconExternal,
+  send: IconSend,
+  reply: IconReply,
+  check: IconCheck,
+  file: IconFile,
 };
+
+/** 이름으로 고르는 아이콘(구간 머리·칩) */
+export const ICONS: Record<IconName, (p: IconProps) => ReactElement> = ICON_TABLE;
 
 export function Icon({ name, ...rest }: IconProps & { name: IconName }): ReactElement {
   const Component = ICONS[name];

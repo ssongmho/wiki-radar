@@ -1,0 +1,58 @@
+[
+  {
+    "id": 101,
+    "email": "owner@example.com",
+    "name": "홍길동",
+    "department": "샘플팀",
+    "role": "staff",
+    "createdAt": "2025-03-02T00:00:00Z"
+  },
+  {
+    "id": 102,
+    "email": "kim@example.com",
+    "name": "김담당",
+    "department": "샘플팀",
+    "role": "staff",
+    "createdAt": "2025-03-02T00:00:00Z"
+  },
+  {
+    "id": 103,
+    "email": "park@example.com",
+    "name": "박담당",
+    "department": "샘플팀",
+    "role": "staff",
+    "createdAt": "2025-05-12T00:00:00Z"
+  },
+  {
+    "id": 104,
+    "email": "lee@example.com",
+    "name": "이담당",
+    "department": "샘플팀",
+    "role": "staff",
+    "createdAt": "2026-07-22T00:00:00Z"
+  },
+  {
+    "id": 201,
+    "email": "choi@example.com",
+    "name": "최외부",
+    "department": "다른팀",
+    "role": "staff",
+    "createdAt": "2025-03-02T00:00:00Z"
+  },
+  {
+    "id": 202,
+    "email": "jung@example.com",
+    "name": "정외부",
+    "department": "다른팀",
+    "role": "admin",
+    "createdAt": "2025-03-02T00:00:00Z"
+  },
+  {
+    "id": 301,
+    "email": "ops@example.com",
+    "name": "운영계정",
+    "department": null,
+    "role": "admin",
+    "createdAt": "2025-03-02T00:00:00Z"
+  }
+]

@@ -1,4 +1,5 @@
 // 처리 결과 입력(2단계 명세 §3) — 초안·검사·저장 입력·저장 결과 풀이. React 를 모르는 순수 함수만 둔다.
+// 메일 회신(2.5단계)의 발송 알림은 lib/reply.ts 가 이 파일의 저장 알림(summarizeSave)을 이어 쓴다.
 import { PARTIAL_SAVE_PREFIX } from '../../shared/ipc';
 import type { SaveResultInput, SaveResultOutput, Task, TaskStatus } from '../../shared/types';
 import { taskTitle, textOf } from './tasks';
@@ -33,12 +34,45 @@ export const NOTE_MAX = 4000;
 /** 담당자를 비우고 내 일 아님으로 저장하면 sync_todo 와 같이 이 이름으로 적힌다 */
 export const DEFAULT_OWNER = '타담당';
 
+/**
+ * 저장할 때 main 이 받는 처리 내용 최대 길이(main config.ts MAX_NOTE_LENGTH 와 같다). 화면의 NOTE_MAX 는 사람이 적는
+ * 몫이고, 보냈지만 저장이 실패해 앱이 붙인 발송 줄까지 합친 것은 이 길이까지 받는다.
+ */
+export const NOTE_SAVE_MAX = 8000;
+
 /** 입력 중인 처리 결과. taskId 별로 메모리에 들고 있다 */
 export interface ResultDraft {
   status: TaskStatus;
   owner: string;
   note: string;
   reflect: boolean;
+  /**
+   * 보냈지만 저장이 실패해 앱이 처리 내용 끝에 붙여 둔 발송 줄(2.5단계 명세 §9-5). 사람이 적은 몫이 아니므로
+   * 처리 내용 길이(NOTE_MAX)에 세지 않는다 — 다시 [저장]하는 길이 막히지 않게.
+   */
+  sentLines?: string[];
+}
+
+/** 처리 내용 가운데 앱이 붙인 발송 줄(draft.sentLines 중 note 에 남아 있는 것)이 차지하는 글자 수(줄바꿈 포함) */
+function sentLinesLength(draft: ResultDraft): number {
+  let note = draft.note;
+  let total = 0;
+  for (const line of draft.sentLines ?? []) {
+    if (line === '' || !note.includes(line)) continue;
+    note = note.replace(line, '');
+    total += line.length + 1;
+  }
+  return total;
+}
+
+/** 사람이 적은 처리 내용 길이(앞뒤 공백 뺌) — 앱이 붙인 발송 줄은 세지 않는다 */
+export function ownNoteLength(draft: ResultDraft): number {
+  return Math.max(0, draft.note.trim().length - sentLinesLength(draft));
+}
+
+/** 처리 내용 칸의 maxLength — 사람이 적는 몫(NOTE_MAX) + 앱이 붙인 발송 줄 */
+export function noteInputMax(draft: ResultDraft): number {
+  return NOTE_MAX + sentLinesLength(draft);
 }
 
 /** 처음 여는 폼: 지금 상태를 고르고 나머지는 비운다 */
@@ -77,7 +111,10 @@ export function draftProblem(draft: ResultDraft): string | null {
     if (/[[\]]/.test(owner)) return '담당자 이름에는 대괄호([ ])를 쓸 수 없습니다.';
     if (owner.length > OWNER_MAX) return `담당자 이름은 ${OWNER_MAX}자까지 적을 수 있습니다.`;
   }
-  if (draft.note.trim().length > NOTE_MAX) return `처리 내용은 ${NOTE_MAX}자까지 적을 수 있습니다.`;
+  if (ownNoteLength(draft) > NOTE_MAX) return `처리 내용은 ${NOTE_MAX}자까지 적을 수 있습니다.`;
+  if (draft.note.trim().length > NOTE_SAVE_MAX) {
+    return `처리 내용과 발송 줄을 합쳐 ${NOTE_SAVE_MAX}자까지 저장할 수 있습니다. 처리 내용을 줄여 주세요.`;
+  }
   return null;
 }
 
@@ -131,7 +168,8 @@ function strings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string' && v.trim() !== '') : [];
 }
 
-function josaRo(word: string): string {
+/** 조사 '(으)로'. 회신 알림(lib/reply.ts)도 쓴다 */
+export function josaRo(word: string): string {
   // '진행 중'·'완료'·'대기'·'내 일 아님' — 받침이 ㄹ 이거나 없으면 '로', 그 밖엔 '으로'
   const last = word.charCodeAt(word.length - 1);
   if (last < 0xac00 || last > 0xd7a3) return '(으)로';

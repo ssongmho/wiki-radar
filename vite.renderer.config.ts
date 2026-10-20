@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import pkg from './package.json';
 
 // 배포 빌드에만 엄격한 CSP를 심는다. 개발 서버는 React Refresh가 인라인 스크립트를 쓰므로
 // 같은 정책을 걸면 화면이 뜨지 않는다(개발용 정책은 index.html에 있다).
@@ -58,5 +59,7 @@ const DEV_PORT = 5873;
 
 export default defineConfig({
   plugins: [woff2Only(), react(), prodCsp()],
+  // 화면에 보이는 앱 버전(제목 막대·사이드바). 자동 업데이트로 바뀐 버전을 눈으로 확인하는 데 쓴다.
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   server: { port: DEV_PORT, strictPort: true },
 });

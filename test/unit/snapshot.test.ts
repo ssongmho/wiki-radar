@@ -111,8 +111,8 @@ describe('구간과 순서', () => {
     ]);
   });
 
-  it('pageCount 8', () => {
-    expect(snap.pageCount).toBe(8);
+  it('pageCount 15(3a단계 fixture 포함 — templates/·.claude/ 도 센다)', () => {
+    expect(snap.pageCount).toBe(15);
   });
 
   it('열린 것(open·wip)만 들어간다', () => {
@@ -305,6 +305,7 @@ describe('나오면 안 되는 것', () => {
     '큐레이션 완료 항목',
     '큐레이션 위임 항목',
     '구간이 완료인 항목',
+    'VOC-2026-1234', // g=voc — VOC 시스템에서 처리한다
     '백업 사본에만 있는 할 일',
     'raw 안의 체크박스',
     '계약 조회 권한 개선 배포',

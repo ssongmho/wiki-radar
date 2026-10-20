@@ -9,6 +9,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { QueueItem, TaskStatus } from '../shared/types';
+import { MAIL_KEY_RE } from '../shared/mailThread';
 import { errCode, readTextFile, sleepSync } from './wiki/fsutil';
 
 export type NewQueueItem = Omit<QueueItem, 'id' | 'createdAt'> & { id?: string; createdAt?: string };
@@ -38,15 +39,19 @@ function renameWithRetry(from: string, to: string): void {
  * 사람이 읽는 문장의 오류를 던진다(원래 파일은 그대로).
  */
 export function writeJsonAtomic(filePath: string, value: unknown): void {
+  writeFileAtomic(filePath, Buffer.from(`${JSON.stringify(value, null, 2)}\n`, 'utf8'));
+}
+
+/** 바이너리판 원자적 쓰기(secrets.bin 등 — 2.13단계 §A-2). 규칙은 writeJsonAtomic 과 같다 */
+export function writeFileAtomic(filePath: string, data: Buffer): void {
   const dir = path.dirname(filePath);
   const base = path.basename(filePath);
   const tmp = path.join(dir, `${base}.${process.pid}-${crypto.randomBytes(4).toString('hex')}.tmp`);
-  const text = `${JSON.stringify(value, null, 2)}\n`;
   try {
     fs.mkdirSync(dir, { recursive: true });
     const fd = fs.openSync(tmp, 'wx');
     try {
-      fs.writeFileSync(fd, text, 'utf8');
+      fs.writeFileSync(fd, data);
       fs.fsyncSync(fd);
     } finally {
       fs.closeSync(fd);
@@ -85,7 +90,7 @@ function brokenPathFor(filePath: string): string {
 }
 
 /** 깨진 파일을 옆으로 옮긴다(move) 또는 복사한다(copy). 옮긴 파일 경로(실패하면 null)를 돌려준다 */
-function setAsideBroken(filePath: string, how: 'move' | 'copy'): string | null {
+export function setAsideBroken(filePath: string, how: 'move' | 'copy'): string | null {
   const target = brokenPathFor(filePath);
   try {
     if (how === 'move') renameWithRetry(filePath, target);
@@ -175,14 +180,44 @@ export function loadJsonArray<T>(
 // ---- 대기열 --------------------------------------------------------------------------------
 
 const STATUSES: ReadonlySet<string> = new Set<TaskStatus>(['open', 'wip', 'done', 'notmine']);
-const OPTIONAL_STRING_FIELDS = ['taskId', 'owner', 'company', 'file', 'mail', 'src', 'context'] as const;
+// reply = 회신을 보내고 저장했을 때 보낸 본문(2.5단계 명세 §4-2 ⑦)
+const OPTIONAL_STRING_FIELDS = ['taskId', 'owner', 'company', 'file', 'mail', 'src', 'context', 'reply'] as const;
+/** 이 버전이 아는 kind(2.14 — mail 더함) */
+const KNOWN_KINDS: ReadonlySet<string> = new Set(['task', 'decision', 'mail']);
 
-/** 저장·읽기 공용 정규화. 알려진 필드만 남기고 빈 선택 필드는 뺀다. 형식이 틀리면 null */
-function toQueueItem(raw: unknown): QueueItem | null {
+/** kind mail 항목 한도(2.14단계 §1) */
+export const QUEUE_MAIL_LIMITS = { title: 200, note: 4_000, hint: 200, from: 300, mailDate: 40 } as const;
+
+const CONTROL_CHAR_RE = /[\u0000-\u001f\u007f]/;
+
+/** 이 버전이 모르는 kind 의 항목인가(새 버전이 넣은 것 — 원문 그대로 보관한다, 2.14 §1-1) */
+function isUnknownKindItem(raw: unknown): raw is Record<string, unknown> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
+  const r = raw as Record<string, unknown>;
+  return typeof r.id === 'string' && r.id !== '' && typeof r.kind === 'string' && !KNOWN_KINDS.has(r.kind) && typeof r.createdAt === 'string';
+}
+
+/** 읽은 원소 하나: 아는 항목 · 모르는 kind 원문 */
+type LoadedEntry = { known: QueueItem } | { unknown: Record<string, unknown> };
+
+/** kind mail 의 선택 글자 필드(빈 글자는 뺀다). 형식이 틀리면 false */
+function mailOptional(item: QueueItem, r: Record<string, unknown>, key: 'hint' | 'from' | 'mailDate', max: number, ok: (v: string) => boolean): boolean {
+  const v = r[key];
+  if (v === undefined || v === null || v === '') return true;
+  if (typeof v !== 'string' || v.length > max || !ok(v)) return false;
+  item[key] = v;
+  return true;
+}
+
+/**
+ * 저장·읽기 공용 정규화. 알려진 필드만 남기고 빈 선택 필드는 뺀다. 형식이 틀리면 null.
+ * kind mail(2.14 §1): mailKey(형식)·scope 필수, hint 200자(제어 문자 없음)·from 300자·mailDate ISO. 화면용 blocked 는 언제나 버린다.
+ */
+export function toQueueItem(raw: unknown): QueueItem | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
   if (typeof r.id !== 'string' || r.id === '') return null;
-  if (r.kind !== 'task' && r.kind !== 'decision') return null;
+  if (r.kind !== 'task' && r.kind !== 'decision' && r.kind !== 'mail') return null;
   if (typeof r.createdAt !== 'string' || r.createdAt === '') return null;
   if (typeof r.title !== 'string') return null;
   if (typeof r.note !== 'string') return null;
@@ -196,6 +231,15 @@ function toQueueItem(raw: unknown): QueueItem | null {
     if (v === undefined || v === null) continue;
     if (typeof v !== 'string') return null;
     if (v !== '') item[key] = v;
+  }
+  if (r.kind === 'mail') {
+    if (typeof r.mailKey !== 'string' || !MAIL_KEY_RE.test(r.mailKey)) return null;
+    if (r.scope !== 'mail' && r.scope !== 'thread') return null;
+    item.mailKey = r.mailKey;
+    item.scope = r.scope;
+    if (!mailOptional(item, r, 'hint', QUEUE_MAIL_LIMITS.hint, (v) => !CONTROL_CHAR_RE.test(v))) return null;
+    if (!mailOptional(item, r, 'from', QUEUE_MAIL_LIMITS.from, () => true)) return null;
+    if (!mailOptional(item, r, 'mailDate', QUEUE_MAIL_LIMITS.mailDate, (v) => !Number.isNaN(Date.parse(v)))) return null;
   }
   return item;
 }
@@ -222,6 +266,8 @@ export class QueueStore {
   private readonly onWarn?: (message: string) => void;
   /** 처음 쓸 때 읽는다. 읽지 못했으면(예외) null 로 남아 다음에 다시 읽는다 */
   private items: QueueItem[] | null = null;
+  /** 이 버전이 모르는 kind 의 항목(원문) — list() 에는 내지 않고 저장할 때 그대로 다시 쓴다(2.14 §1-1) */
+  private unknown: Record<string, unknown>[] = [];
 
   constructor(dataDir: string, onWarn?: (message: string) => void) {
     this.file = path.join(dataDir, QUEUE_FILE);
@@ -235,22 +281,43 @@ export class QueueStore {
 
   private load(): QueueItem[] {
     if (this.items) return this.items;
-    const { items } = loadJsonArray(this.file, '반영 대기열', toQueueItem, this.onWarn);
+    const parse = (raw: unknown): LoadedEntry | null => {
+      const known = toQueueItem(raw);
+      if (known) return { known };
+      // 모르는 kind 는 형식이 틀린 것으로 보지 않는다(.broken- 복사·경고 없음 — 로그 한 줄만)
+      if (isUnknownKindItem(raw)) return { unknown: { ...raw } };
+      return null;
+    };
+    const { items: entries } = loadJsonArray(this.file, '반영 대기열', parse, this.onWarn);
     // 같은 id 가 두 번 있으면 앞의 것만
     const seen = new Set<string>();
-    const unique = items.filter((x) => {
-      if (seen.has(x.id)) return false;
-      seen.add(x.id);
-      return true;
-    });
+    const unique: QueueItem[] = [];
+    const unknown: Record<string, unknown>[] = [];
+    for (const e of entries) {
+      const id = 'known' in e ? e.known.id : (e.unknown.id as string);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      if ('known' in e) unique.push(e.known);
+      else unknown.push(e.unknown);
+    }
+    if (unknown.length > 0) {
+      console.warn(`[wiki-radar] 반영 대기열: 이 버전이 모르는 항목 ${unknown.length}건(새 버전에서 넣음)은 그대로 둡니다`);
+    }
+    this.unknown = unknown;
     this.items = sortOldestFirst(unique);
     return this.items;
   }
 
-  /** 디스크에 먼저 쓰고, 성공했을 때만 메모리에 반영한다(실패하면 예외, 상태는 그대로) */
+  /** 디스크에 먼저 쓰고, 성공했을 때만 메모리에 반영한다(실패하면 예외, 상태는 그대로). 모르는 kind 원문은 뒤에 그대로 */
   private commit(next: QueueItem[]): void {
-    writeJsonAtomic(this.file, next);
+    writeJsonAtomic(this.file, [...next, ...this.unknown]);
     this.items = next;
+  }
+
+  /** 이 버전이 모르는 kind 의 항목 수(반영 대기 화면 queue-unknown) */
+  unknownCount(): number {
+    this.load();
+    return this.unknown.length;
   }
 
   /** 오래된 것부터 */
@@ -258,8 +325,12 @@ export class QueueStore {
     return this.load().map(copyItem);
   }
 
-  /** 추가. 같은 taskId(kind 'task')가 있으면 새 것으로 교체한다 */
-  add(item: NewQueueItem): QueueItem {
+  /**
+   * 추가. 같은 taskId(kind 'task')가 있으면 새 것으로 교체한다. 새 항목에 reply(보낸 회신 본문)가 없고 바뀌는
+   * 항목에 있으면 이어받는다 — 회신을 보낸 뒤 같은 할 일을 다시 저장해도(보냈지만 저장 실패 뒤의 [저장], 진행 중으로
+   * 보낸 뒤 완료로 저장 등) 고객에게 나간 본문이 반영 프롬프트에서 빠지지 않게(2.5단계 명세 §9-3).
+   */
+  add(item: NewQueueItem, opts: { replaceIds?: readonly string[] } = {}): QueueItem {
     const current = this.load();
     const entry = toQueueItem({
       ...item,
@@ -267,9 +338,16 @@ export class QueueStore {
       createdAt: item.createdAt ?? new Date().toISOString(),
     });
     if (!entry) throw new Error('대기열 항목 형식이 맞지 않습니다(kind·title·note·status 확인)');
+    // kind mail(2.14 §1·§5): 같은 메일을 덮는 기존 mail 항목 — 스레드를 아는 쪽(mailWiki)이 replaceIds 로 준다
+    const replaceIds = new Set(entry.kind === 'mail' ? (opts.replaceIds ?? []) : []);
     const replaces = (x: QueueItem): boolean =>
       x.id === entry.id ||
+      (x.kind === 'mail' && replaceIds.has(x.id)) ||
       (entry.kind === 'task' && entry.taskId !== undefined && x.kind === 'task' && x.taskId === entry.taskId);
+    if (entry.kind === 'task' && entry.reply === undefined) {
+      const inherited = current.find((x) => replaces(x) && x.kind === 'task' && x.reply !== undefined)?.reply;
+      if (inherited !== undefined) entry.reply = inherited;
+    }
     this.commit(sortOldestFirst([...current.filter((x) => !replaces(x)), entry]));
     return copyItem(entry);
   }

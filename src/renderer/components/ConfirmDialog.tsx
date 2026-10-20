@@ -13,10 +13,17 @@ export interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   testId?: string;
+  /** 확인 버튼의 data-testid(시험이 누를 버튼) */
+  confirmTestId?: string;
+  /** 취소 버튼의 data-testid */
+  cancelTestId?: string;
+  /** 넓은 대화상자(회신 확인처럼 내용이 긴 것) */
+  wide?: boolean;
 }
 
 export function ConfirmDialog(props: ConfirmDialogProps): ReactElement {
-  const { open, title, children, confirmText, cancelText = '취소', confirmIcon, onConfirm, onCancel, testId } = props;
+  const { open, title, children, confirmText, cancelText = '취소', confirmIcon, onConfirm, onCancel, testId, confirmTestId, cancelTestId, wide } =
+    props;
   const ref = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
@@ -40,7 +47,7 @@ export function ConfirmDialog(props: ConfirmDialogProps): ReactElement {
   return (
     <dialog
       ref={ref}
-      className="dialog"
+      className={wide ? 'dialog dialog--wide' : 'dialog'}
       data-testid={open ? testId : undefined}
       aria-labelledby={titleId}
       aria-describedby={bodyId}
@@ -59,11 +66,11 @@ export function ConfirmDialog(props: ConfirmDialogProps): ReactElement {
             {children}
           </div>
           <div className="dialog-actions">
-            <button type="button" className="btn btn--primary" onClick={onConfirm}>
+            <button type="button" className="btn btn--primary" data-testid={confirmTestId} onClick={onConfirm}>
               {confirmIcon}
               {confirmText}
             </button>
-            <button type="button" className="btn btn--secondary" ref={cancelRef} onClick={onCancel}>
+            <button type="button" className="btn btn--secondary" ref={cancelRef} data-testid={cancelTestId} onClick={onCancel}>
               {cancelText}
             </button>
           </div>

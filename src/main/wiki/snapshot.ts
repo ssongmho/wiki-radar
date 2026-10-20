@@ -42,6 +42,9 @@ export const WIKI_PATHS = {
   linkRaw: '_raw-link/link_raw.py',
 } as const;
 
+/** items.json 의 이 구간(g)은 VOC 시스템 쪽 건이라 할 일 스냅샷에서 뺀다 */
+export const CURATED_VOC_GROUP = 'voc';
+
 /** 모든 체크박스를 보는 파일인가(그 밖의 파일은 `#내할일` 태그가 있는 줄만) */
 export function isTargetFile(rel: string): boolean {
   return rel === WIKI_PATHS.myTasks || rel === WIKI_PATHS.contracts || entityNameOf(rel) !== null;
@@ -197,6 +200,9 @@ export function buildSnapshot(opts: BuildOptions): Snapshot {
 
   // ---- 1-1. 큐레이션 항목
   for (const item of items) {
+    // g 가 voc 인 항목은 VOC 시스템에서 읽어온 건이다 — 처리·종결도 VOC 에서 하므로 할 일에 넣지 않는다.
+    // 내가 담당인 진행 중 티켓은 VOC 보드(source 'voc')로 따로 들어온다.
+    if (item.g === CURATED_VOC_GROUP) continue;
     const task: Task = {
       id: curatedId(item.t),
       source: 'curated',

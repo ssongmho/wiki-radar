@@ -47,10 +47,21 @@ export function useSnapshot(): SnapshotHook {
     };
 
     let unsubscribe: (() => void) | undefined;
+    let unsubscribeGone: (() => void) | undefined;
     try {
       unsubscribe = api.onSnapshot(accept);
     } catch {
       // 구독에 실패해도 첫 요청 결과는 보여 준다.
+    }
+    try {
+      // 보이던 목록이 없어짐(개인 위키 없음 + 팀 동기화 끔 — 2.9단계 §3): 이때만 ready 를 오류로 덮는다
+      if (typeof api.onSnapshotGone === 'function') {
+        unsubscribeGone = api.onSnapshotGone((message) => {
+          if (alive) setState({ status: 'error', message: errorText(new Error(message)) });
+        });
+      }
+    } catch {
+      // 옛 preload — 구독 없이
     }
     Promise.resolve()
       .then(() => api.getSnapshot())
@@ -59,6 +70,7 @@ export function useSnapshot(): SnapshotHook {
     return () => {
       alive = false;
       if (typeof unsubscribe === 'function') unsubscribe();
+      if (typeof unsubscribeGone === 'function') unsubscribeGone();
     };
   }, [attempt]);
 

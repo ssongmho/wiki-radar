@@ -15,5 +15,5 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "test", "forge.env.d.ts", "forge.config.ts", "vite.*.config.ts", "vitest.config.ts", "playwright.config.ts"]
+  "include": ["src", "test", "forge.env.d.ts", "forge.config.ts", "vite.*.config.ts", "vitest.config.ts", "vitest.perf.config.ts", "playwright.config.ts"]
 }

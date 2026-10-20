@@ -120,6 +120,52 @@ describe('QueueStore 기본 동작', () => {
     expect(q.list().map((x) => x.note)).toEqual(['원래']);
   });
 
+  it('회신 본문(reply)을 저장하고 다시 읽는다. 빈 reply 는 저장하지 않는다(2.5단계)', () => {
+    const dir = tempDir();
+    const q = new QueueStore(dir);
+    const body = '안녕하세요.\n요청하신 인벤토리 확인 결과를 보내드립니다.\n\n감사합니다.';
+    const withReply = q.add(task('c:mail', '회신함', { reply: body, mail: 'raw/mail/한결케미칼/x.md' }));
+    const noReply = q.add(task('c:plain', '회신 없음', { reply: '' }));
+    expect(withReply.reply).toBe(body);
+    expect('reply' in noReply).toBe(false);
+    const again = new QueueStore(dir).list();
+    expect(again.find((x) => x.taskId === 'c:mail')?.reply).toBe(body);
+    expect(again.find((x) => x.taskId === 'c:plain')).not.toHaveProperty('reply');
+    expect((readQueueFile(dir) as QueueItem[]).find((x) => x.taskId === 'c:mail')?.reply).toBe(body);
+  });
+
+  it('같은 할 일을 reply 없이 다시 넣으면 앞 항목의 reply(보낸 회신 본문)를 이어받는다 — 새 reply 가 있으면 새 것', () => {
+    const dir = tempDir();
+    const q = new QueueStore(dir);
+    const sentBody = '안녕하세요.\n8월분 반영을 확인했습니다.';
+    // 보내고 저장(진행 중) → 대기열에 reply 와 함께
+    q.add(task('c:mail', '확인 중\n메일 회신 발송 — 받는사람: 김담당 · 제목: RE: 건', { status: 'wip', reply: sentBody }));
+    // 나중에 [저장](완료) — IPC saveResult 는 reply 를 넘기지 않는다
+    const resaved = q.add(task('c:mail', '완료', { status: 'done' }));
+    expect(resaved.reply).toBe(sentBody);
+    expect(q.list()).toHaveLength(1);
+    expect(q.list()[0]).toMatchObject({ taskId: 'c:mail', note: '완료', status: 'done', reply: sentBody });
+    expect(new QueueStore(dir).list()[0].reply, '파일에도 이어받은 reply').toBe(sentBody);
+    // 새로 보낸 회신은 새 본문으로 바꾼다
+    q.add(task('c:mail', '다시 보냄', { reply: '두 번째 회신' }));
+    expect(q.list()[0].reply).toBe('두 번째 회신');
+    // 다른 할 일·decision 은 이어받지 않는다
+    expect(q.add(task('c:other', '다른 일')).reply).toBeUndefined();
+    const decision = q.add({ kind: 'decision', title: '결정', note: '승인' });
+    expect(decision.reply).toBeUndefined();
+  });
+
+  it('reply 가 문자열이 아닌 항목은 형식이 틀린 것으로 본다', () => {
+    const dir = tempDir();
+    const q = new QueueStore(dir);
+    expect(() => q.add(task('c:bad', 'x', { reply: 42 as unknown as string }))).toThrow(/형식/);
+    const good: QueueItem = { id: 'g', kind: 'task', createdAt: '2026-09-28T00:00:00.000Z', title: '좋음', note: '', reply: '본문' };
+    fs.writeFileSync(path.join(dir, QUEUE_FILE), JSON.stringify([good, { ...good, id: 'b', reply: ['배열'] }]), 'utf8');
+    const warns: string[] = [];
+    expect(new QueueStore(dir, (m) => warns.push(m)).list()).toEqual([good]);
+    expect(warns[0]).toMatch(/1건/);
+  });
+
   it('형식이 틀린 항목은 넣지 않는다', () => {
     const q = new QueueStore(tempDir());
     expect(() => q.add({ kind: 'bogus' as unknown as 'task', title: 't', note: '' })).toThrow(/형식/);

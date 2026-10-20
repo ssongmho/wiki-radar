@@ -226,7 +226,6 @@ describe('핵심문구·ID', () => {
     ['- [ ] 앞 [pri:: 1] 뒤', '앞 뒤'],
     ['- [ ]   여러 공백 시작 [due:: 2026-09-23]', '여러 공백 시작'],
     ['- [ ] 키에 공백 [due date:: x] 남음', '키에 공백 [due date:: x] 남음'],
-    ['- [ ] 메일 [mail:: raw/mail/a/_[공지] 제목.md] 끝', '메일 제목.md] 끝'],
     ['- [ ] 한글 키 [열림:: 7영업일] [재촉:: 2회]', '한글 키'],
     ['- [X] 대문자 X\t[done:: 2026-09-01]\r', '대문자 X'],
     // 파이썬 공백 규칙(JS \s·trim 과 다른 글자): U+FEFF 는 글자, \x1c-\x1f·\x85 는 공백
@@ -239,6 +238,26 @@ describe('핵심문구·ID', () => {
     ['- [ ] 줄 구분 [pri:: 1]', '줄 구분'],
   ])('build_todo core_of 와 같다: %j', (line, expected) => {
     expect(coreOf(line)).toBe(expected);
+  });
+
+  // build_todo 와 일부러 다른 곳(2026-09-28): 값 안의 짝 맞는 대괄호는 값이다. build_todo 는 첫 ']' 에서 끊어
+  // '메일 제목.md] 끝' 이 되고, 그 앞 40자(앵커)가 원래 줄에 이어서 나오지 않아 저장이 줄을 못 찾았다.
+  it.each([
+    ['- [ ] 메일 끝 [mail:: raw/mail/a/_[공지] 제목.md]', '메일 끝'],
+    [
+      '- [ ] 🔴 거래처 선물 리스트 제출 (부서별 수량) #내할일 [pri:: 2] [mail:: raw/mail/경영지원/2026/a_[재요청] 거래처 선물_2914b9.md] [opened:: 2026-08-13]',
+      '🔴 거래처 선물 리스트 제출 (부서별 수량) #내할일',
+    ],
+    // 여는 것만 있으면(짝 없음) 전처럼 첫 ']' 에서 끊는다
+    ['- [ ] 짝 없음 [mail:: raw/mail/a/_[공지 제목.md]', '짝 없음'],
+  ])('값 안의 대괄호는 값이다: %j', (line, expected) => {
+    expect(coreOf(line)).toBe(expected);
+    // 앵커(앞 40자)는 원래 줄에 그대로 들어 있어야 저장이 줄을 찾는다
+    expect(line).toContain(checkboxAnchorMatch(line));
+  });
+
+  it('닫는 것만 있으면 전처럼 첫 `]` 에서 끊는다(이런 줄은 저장이 스냅샷의 줄로 찾는다 — writeback preferLine)', () => {
+    expect(coreOf('- [ ] 닫는 것만 [mail:: raw/mail/a/공지] 제목.md]')).toBe('닫는 것만 제목.md]');
   });
 
   it('체크박스 ID 는 고정 값이다', () => {

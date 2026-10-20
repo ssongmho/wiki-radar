@@ -152,16 +152,19 @@ test('시작 시 위키 폴더가 없어도 폴더가 생기면 스스로 회복
   const wiki = path.join(parent, 'late', 'WIKI');
   const { logs, sidebar } = await launch(wiki);
 
-  const error = sidebar.getByTestId('snapshot-error');
-  await expect(error).toBeVisible();
-  await expect(error).toContainText('위키 폴더를 찾을 수 없습니다');
+  // 위키가 없으면 오류 대신 '위키 폴더가 없습니다' 안내와 [설정](2.7단계 — 2.9단계에서 「환경 점검」 → 「설정」)
+  const missing = sidebar.getByTestId('wiki-missing');
+  await expect(missing).toBeVisible();
+  await expect(missing).toContainText('위키 폴더가 없습니다');
+  await expect(sidebar.getByTestId('sidebar-setup')).toBeVisible();
   // 창 2개가 같은 실패를 요청해도 main 로그에는 Electron 의 핸들러 스택이 아니라 우리 한 줄만 남는다
   expect(logs.main.filter((l) => l.includes('Error occurred in handler'))).toEqual([]);
   expect(logs.main.filter((l) => l.includes('radar:getSnapshot 실패'))).toHaveLength(1);
 
   // 폴더가 생긴다 — '다시 시도' 를 누르지 않아도 스냅샷이 온다
   copyFixture(wiki);
-  await expect(sidebar.getByTestId('snapshot-error')).toHaveCount(0, { timeout: WATCH_RETRY_WAIT_MS });
+  await expect(sidebar.getByTestId('wiki-missing')).toHaveCount(0, { timeout: WATCH_RETRY_WAIT_MS });
+  await expect(sidebar.getByTestId('snapshot-error')).toHaveCount(0);
   await expect(sidebar.getByTestId('bucket-overdue')).toHaveAttribute('data-count', '5', { timeout: 15_000 });
   const before = await rows(sidebar).count();
 

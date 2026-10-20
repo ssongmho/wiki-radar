@@ -1,11 +1,13 @@
-// 풀스크린 오른쪽 열: 원 메일 · 출처 · 연결된 줄.
+// 풀스크린 오른쪽 열: 원 메일 · 출처 · 연결된 줄. 내 담당 VOC 할 일(2.6단계 §5)은 위키에 줄·메일이 없어 'VOC 티켓' 한 칸만.
+// 팀 위키 할 일(2.9단계 §4-2)은 '팀 위키' 칸(문서·담당)과 연결된 줄(팀 사본의 그 줄 — 누르면 팀 사본 문서를 연다).
 // 메일 본문 요약은 데이터일 뿐이다 — 글자로만 보여 주고 HTML·링크로 해석하지 않는다.
 import type { ReactElement, Ref } from 'react';
 import type { MailSummary, Task } from '../../../shared/types';
-import { IconExternal, IconFile, IconLink, IconMail } from '../../components/Icons';
+import { IconExternal, IconFile, IconLink, IconMail, IconTicket, IconUser } from '../../components/Icons';
 import { useMail } from '../../hooks/useMail';
+import { showVocTicket } from '../../hooks/useVocCreate';
 import { formatMailDate, yearOf } from '../../lib/date';
-import { fileLabel, numberOf, senderName, splitSources, textOf } from '../../lib/tasks';
+import { fileLabel, isTeamTask, isVocTask, numberOf, senderName, splitSources, teamDocOf, teamOwnersOf, textOf } from '../../lib/tasks';
 
 interface SectionProps {
   task: Task | null;
@@ -63,7 +65,8 @@ function MailSection({ task, version, today, onOpenFile }: SectionProps & { vers
       body = <p className="empty-note">메일을 불러오지 못했습니다. ({state.message})</p>;
       break;
     case 'ready':
-      body = <MailCard mail={state.mail} path={path ?? state.mail.path} today={today} onOpenFile={onOpenFile} />;
+      // 할 일 줄이 메일 ID([mail:: m:…] — 2.15)면 main 이 푼 경로(state.mail.path)를 쓴다
+      body = <MailCard mail={state.mail} path={state.mail.path || path || ''} today={today} onOpenFile={onOpenFile} />;
       break;
   }
   return (
@@ -171,13 +174,63 @@ export interface InfoAsideProps {
   version: string;
   today: string;
   onOpenFile: (path: string) => void;
+  /** 팀 사본 문서 열기(팀 할 일의 연결된 줄) */
+  onOpenTeamDoc?: (path: string) => void;
   ref?: Ref<HTMLElement>;
 }
 
-export function InfoAside({ task, version, today, onOpenFile, ref }: InfoAsideProps): ReactElement {
+/** 팀 위키 할 일: 문서 · 담당 */
+function TeamSection({ task }: { task: Task }): ReactElement {
+  const owners = teamOwnersOf(task);
+  return (
+    <section className="aside-section" aria-labelledby="aside-team-title" data-testid="aside-team">
+      <h2 id="aside-team-title" className="sub-title">
+        <IconFile size={16} />
+        팀 위키
+      </h2>
+      <p className="path-text">{teamDocOf(task) ?? textOf(task.file)}</p>
+      <p className="aside-team-owner">
+        <IconUser size={14} />
+        {owners.length > 0 ? `담당 ${owners.join(', ')}` : '미배정'}
+      </p>
+      <p className="empty-note">팀 위키에서 온 할 일이라 원 메일·출처가 없습니다. 상태·담당·기한은 가운데 ‘팀 할 일 입력’으로 팀 위키에 씁니다.</p>
+    </section>
+  );
+}
+
+/** VOC 할 일: 번호 + 위키에 줄이 없다는 안내 + VOC 화면에서 보기 */
+function VocSection({ task }: { task: Task }): ReactElement {
+  const number = textOf(task.voc?.number);
+  const ticketId = numberOf(task.voc?.id);
+  return (
+    <section className="aside-section" aria-labelledby="aside-voc-title">
+      <h2 id="aside-voc-title" className="sub-title">
+        <IconTicket size={16} />
+        VOC 티켓
+      </h2>
+      {number && <p className="path-text">{number}</p>}
+      <p className="empty-note aside-voc-note">VOC 에서 온 할 일이라 원 메일·출처·연결된 위키 줄이 없습니다. 처리는 가운데 ‘VOC 처리’에서 VOC 에 남깁니다.</p>
+      {ticketId !== undefined && (
+        <button type="button" className="link-btn" onClick={() => showVocTicket(ticketId)}>
+          <IconTicket size={14} />
+          VOC 화면에서 보기
+        </button>
+      )}
+    </section>
+  );
+}
+
+export function InfoAside({ task, version, today, onOpenFile, onOpenTeamDoc, ref }: InfoAsideProps): ReactElement {
   return (
     <aside className="fv-aside scroll" aria-label="연결된 정보" ref={ref}>
-      {task && (
+      {task && isVocTask(task) && <VocSection task={task} />}
+      {task && isTeamTask(task) && (
+        <>
+          <TeamSection task={task} />
+          <LineSection task={task} onOpenFile={onOpenTeamDoc ?? (() => undefined)} />
+        </>
+      )}
+      {task && !isVocTask(task) && !isTeamTask(task) && (
         <>
           <MailSection task={task} version={version} today={today} onOpenFile={onOpenFile} />
           <SourceSection task={task} onOpenFile={onOpenFile} />

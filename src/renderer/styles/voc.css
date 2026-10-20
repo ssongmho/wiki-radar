@@ -1,0 +1,1149 @@
+/* VOC 화면(2.6단계 명세 §3): 내비 오른쪽 전체 = 머리 · 안내 띠 · 칸 목록 | 티켓 목록 | 상세.
+   사이드바 상태 줄의 VOC 칸, 내비의 VOC 수, 확인·설정 대화상자의 VOC 몫도 여기에 둔다. 색·글꼴은 tokens.css 만 쓴다. */
+
+/* ── 화면 틀 ── */
+.vv {
+  grid-column: 2 / -1;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(172px, 232px) minmax(260px, 30%) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.vv-head {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.vv-head-text {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 18px;
+}
+
+.vv-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-17);
+  font-weight: 600;
+}
+
+.vv-title .icon {
+  align-self: center;
+  color: var(--text-2);
+}
+
+.vv-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 0;
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+.vv-summary-part {
+  white-space: nowrap;
+}
+
+/* 조각 사이의 가운뎃점(글자라 읽기 도구에도 쉼표처럼 들린다) */
+.vv-summary-part + .vv-summary-part::before {
+  content: '·';
+  margin: 0 8px;
+  color: var(--text-3);
+}
+
+.vv-summary-part.tone-coral,
+.vv-summary-part.tone-amber {
+  font-weight: 600;
+}
+
+.vv-fetched {
+  color: var(--text-3);
+}
+
+.vv-head-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.vv-head-actions .btn {
+  padding: 0 14px;
+}
+
+/* ── 상태 안내 띠 ── */
+.vv-banner {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 20px 0;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--text-3);
+  border-radius: var(--radius);
+  font-size: var(--fs-13);
+  line-height: 1.55;
+}
+
+.vv-banner--amber {
+  background: var(--amber-bg);
+  border-color: var(--amber-line);
+  border-left-color: var(--amber);
+}
+
+.vv-banner--coral {
+  background: var(--coral-bg);
+  border-color: var(--coral-line);
+  border-left-color: var(--coral);
+}
+
+.vv-banner > .state-spinner,
+.vv-banner-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.vv-banner--amber .vv-banner-icon {
+  color: var(--amber);
+}
+
+.vv-banner--coral .vv-banner-icon {
+  color: var(--coral);
+}
+
+.vv-banner-text {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vv-banner-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.vv-banner-detail {
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+}
+
+.vv-banner-title,
+.vv-banner-detail {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.vv-banner-action {
+  flex-shrink: 0;
+  padding: 0 14px;
+}
+
+.vv-command {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.vv-command-text {
+  min-width: 0;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--fs-13);
+  color: var(--text);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.vv-command-copy {
+  padding: 0 14px;
+}
+
+/* 로그인 필요 띠의 '터미널에서 하려면'(접이식 — 앱 안 [로그인]이 먼저다) */
+.vv-terminal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vv-terminal-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 28px;
+  font-size: var(--fs-12-5);
+  color: var(--cyan);
+  list-style: none;
+  cursor: pointer;
+}
+
+.vv-terminal-summary::-webkit-details-marker {
+  display: none;
+}
+
+.vv-terminal-summary:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.vv-terminal-chevron {
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+}
+
+.vv-terminal[open] .vv-terminal-chevron {
+  transform: rotate(0deg);
+}
+
+/* 로그인 대화상자 */
+.vv-login-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vv-login-title .icon {
+  color: var(--amber);
+}
+
+.vv-login-body {
+  gap: 14px;
+}
+
+/* 할 일 상세(V3a·V3b)·설정 대화상자의 '로그인 필요' 안내 + [로그인] */
+.voc-login-needed-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.voc-login-needed > .btn {
+  flex-shrink: 0;
+  align-self: center;
+  height: 32px;
+  padding: 0 14px;
+}
+
+/* 칸이 없을 때(받는 중·로그인 필요 등): 세 열 자리 전체 */
+.vv-state {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  padding: 40px 36px;
+}
+
+.vv-state .state {
+  width: 100%;
+  max-width: 560px;
+  padding: 0;
+}
+
+/* ── 왼쪽 칸 목록 ── */
+.vv-lanes {
+  grid-column: 1;
+  grid-row: 3;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px 8px;
+  background: var(--nav);
+  border-right: 1px solid var(--line);
+}
+
+.vv-lane-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vv-lane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--hit);
+  padding: 7px 10px 7px 9px;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text-2);
+  text-align: left;
+}
+
+.vv-lane:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.vv-lane.is-selected {
+  background: var(--selected);
+  color: var(--text);
+}
+
+.vv-lane.is-selected .vv-lane-name {
+  font-weight: 600;
+}
+
+/* 미배정에 건이 있으면 앰버(띠 + 수) */
+.vv-lane--unassigned.is-attention {
+  border-left-color: var(--amber);
+}
+
+.vv-lane--unassigned.is-attention .vv-lane-count {
+  color: var(--amber);
+}
+
+.vv-lane-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vv-lane-name {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-13-5);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.vv-lane-sub {
+  font-size: var(--fs-11);
+  font-weight: 400;
+  color: var(--text-3);
+}
+
+.vv-lane.is-selected .vv-lane-sub {
+  color: var(--text-2);
+}
+
+.vv-lane-count {
+  flex-shrink: 0;
+  font-size: var(--fs-13);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.vv-lane-count.is-zero {
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.vv-lane-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  padding-left: 24px;
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+.vv-lane.is-selected .vv-lane-meta {
+  color: var(--text-2);
+}
+
+.vv-lane-part.tone-coral,
+.vv-lane-part.tone-amber {
+  font-weight: 600;
+}
+
+/* ── 가운데 티켓 목록 ── */
+.vv-list {
+  grid-column: 2;
+  grid-row: 3;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+}
+
+.vv-list-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.vv-list-head .fv-list-title {
+  min-width: 0;
+  font-size: var(--fs-15);
+  overflow-wrap: anywhere;
+}
+
+.vv-list-count {
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.vv-list-body {
+  flex-grow: 1;
+  min-height: 0;
+  padding: 8px 10px 10px;
+}
+
+.vv-ticket .row-body {
+  gap: 2px;
+}
+
+.vv-ticket-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.vv-ticket-number {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  color: var(--text-2);
+}
+
+.vv-pri .strip-top {
+  font-size: var(--fs-15);
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.vv-pri--amber .strip-top {
+  color: var(--amber);
+}
+
+.vv-pri--muted .strip-top {
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+/* SLA 초과·임박 표식(색 + 글자) — VOC 할 일 칩도 이 모양을 쓸 수 있다 */
+.voc-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.voc-badge--coral {
+  background: var(--coral-bg);
+  border-color: var(--coral-line);
+  color: var(--coral);
+}
+
+.voc-badge--amber {
+  background: var(--amber-bg);
+  border-color: var(--amber-line);
+  color: var(--amber);
+}
+
+/* ── 오른쪽 상세 ── */
+.vv-detail {
+  grid-column: 3;
+  grid-row: 3;
+}
+
+.vv-detail .fv-detail-body {
+  gap: 18px;
+  padding: 22px 28px 28px;
+}
+
+.vv-detail .detail-notice {
+  padding: 12px 28px 16px;
+}
+
+.vv-detail-number {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-13);
+  color: var(--text-2);
+}
+
+.vv-facts-panel {
+  padding: 16px 20px;
+}
+
+.vv-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 7px 18px;
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+.vv-facts dt {
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.vv-facts dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.vv-fact-note {
+  color: var(--text-2);
+}
+
+.vv-page-link {
+  min-height: 0;
+  padding: 0;
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+/* 좁은 dd 안의 링크도 누르기 쉽게 — 둘레를 넓힌다(보이는 크기는 그대로) */
+.vv-page-link {
+  position: relative;
+}
+
+.vv-page-link::after {
+  content: '';
+  position: absolute;
+  inset: -12px -4px;
+}
+
+.vv-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vv-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.vv-section-note {
+  flex-grow: 1;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+}
+
+.vv-small-btn {
+  padding: 0 12px;
+  font-size: var(--fs-12-5);
+}
+
+.vv-request-text {
+  padding-left: 12px;
+  border-left: 2px solid var(--line-strong);
+  font-size: var(--fs-13-5);
+  line-height: 1.65;
+  color: var(--text-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.vv-fold-chevron {
+  transition: transform 0.15s ease;
+}
+
+.vv-fold-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.vv-reply-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vv-reply {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.vv-reply-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+}
+
+.vv-reply-author {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.vv-reply-type {
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-11);
+}
+
+.vv-reply-text {
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--text-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 담당·일정 바꾸기 */
+.vv-actions {
+  gap: 14px;
+  padding: 18px 20px;
+}
+
+.vv-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.vv-action-label {
+  flex: 0 0 132px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vv-action-controls {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vv-action-controls .btn {
+  padding: 0 14px;
+}
+
+.vv-select,
+.vv-date {
+  flex: 1 1 160px;
+  min-width: 0;
+  max-width: 280px;
+  font: inherit;
+  color: var(--text);
+}
+
+.vv-select option {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.vv-actions-hint {
+  margin-left: 0;
+}
+
+.vv-actions-hint.tone-amber {
+  color: var(--amber);
+}
+
+/* ── 확인 대화상자의 VOC 몫 ── */
+.voc-confirm-subject {
+  font-family: var(--font);
+  font-size: var(--fs-12-5);
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+/* ── 설정 대화상자 ── */
+.vv-settings-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vv-settings-body {
+  max-height: min(64vh, 680px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-right: -8px;
+  padding-right: 8px;
+  font-size: var(--fs-13);
+  color: var(--text-body);
+}
+
+.vv-settings-body .state {
+  padding: 12px 0;
+}
+
+.vv-settings-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.vv-settings-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.vv-settings-group > legend {
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+.vv-settings-note {
+  font-size: var(--fs-12);
+  line-height: 1.55;
+  color: var(--text-2);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.vv-settings-note code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  white-space: nowrap;
+}
+
+.vv-settings-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+}
+
+.vv-filter {
+  flex: 1 1 200px;
+  max-width: 300px;
+}
+
+.vv-check-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vv-check-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vv-check-group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--fs-12-5);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.vv-check-group-count {
+  font-size: var(--fs-11);
+  font-weight: 400;
+  color: var(--text-3);
+}
+
+.vv-check-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 2px 8px;
+}
+
+.vv-check-list--systems {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.vv-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--hit);
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.vv-check:hover {
+  background: var(--bg);
+}
+
+.vv-check input {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--amber);
+}
+
+.vv-check-text {
+  min-width: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.vv-check-hint {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+.vv-settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.vv-poll {
+  width: 120px;
+}
+
+.vv-settings-grow {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+/* ── 풀스크린 내비의 VOC ── */
+.nav-item-count--note {
+  font-size: var(--fs-11);
+  font-weight: 600;
+  color: var(--amber);
+  white-space: nowrap;
+}
+
+/* ── 사이드바 상태 줄의 VOC(합계만) ── */
+.sb-status--voc {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+
+.sb-status-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sb-status-text > span + span {
+  margin-left: 4px;
+}
+
+.sb-status-extra {
+  font-weight: 600;
+  color: var(--coral);
+}
+
+.sb-status-item.is-zero .sb-status-extra {
+  color: var(--coral);
+}
+
+.sb-status-item.is-attention {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+/* ── V4(명세 §14): 첨부·작업시간·해결·고객 메일 ── */
+.vv-file-list,
+.vv-worklog-list,
+.vv-mail-replies,
+.vv-mail-logs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vv-file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.vv-file-main {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+}
+
+.vv-file-name {
+  min-width: 0;
+  font-size: var(--fs-13);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.vv-file-meta {
+  flex-shrink: 0;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+}
+
+.vv-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vv-file .form-problem,
+.vv-file-note {
+  flex-basis: 100%;
+}
+
+.vv-file-note {
+  font-size: var(--fs-12);
+  color: var(--text-3);
+}
+
+.vv-thumb {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: flex-start;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: zoom-in;
+}
+
+.vv-thumb img {
+  max-width: 220px;
+  max-height: 140px;
+  object-fit: contain;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+
+.vv-thumb:focus-visible img {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.vv-zoom.dialog--wide,
+.vv-zoom {
+  width: min(1100px, calc(100vw - 48px));
+}
+
+.vv-zoom-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vv-zoom-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fs-15);
+  overflow-wrap: anywhere;
+}
+
+.vv-zoom-img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 180px);
+  margin: 0 auto;
+  object-fit: contain;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+
+.vv-worklog {
+  display: grid;
+  grid-template-columns: 112px minmax(60px, 96px) 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 36px;
+  padding: 4px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: var(--fs-13);
+}
+
+.vv-worklog-date,
+.vv-worklog-who {
+  color: var(--text-2);
+}
+
+.vv-worklog-hours {
+  font-family: var(--font-mono);
+  color: var(--text);
+  text-align: right;
+}
+
+.vv-worklog .vv-worklog-note {
+  min-width: 0;
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.vv-worklog-delete {
+  min-height: 0;
+  font-size: var(--fs-12-5);
+}
+
+.vv-worklog-add {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.vv-worklog-add .result-hint {
+  margin-left: 0;
+}
+
+.vv-worklog-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vv-worklog-form .vv-hours {
+  flex: 0 0 104px;
+}
+
+.vv-worklog-form .vv-date {
+  flex: 0 1 160px;
+}
+
+.vv-worklog-form .vv-worklog-note {
+  flex: 1 1 180px;
+  min-width: 0;
+  font: inherit;
+  color: var(--text);
+}
+
+.vv-finish-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vv-mail-replies .vv-check {
+  align-items: flex-start;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.vv-mail-replies .vv-check input {
+  margin-top: 3px;
+}
+
+.vv-mail-replies .vv-check-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vv-mail-reply-head {
+  font-size: var(--fs-12);
+  color: var(--text-2);
+}
+
+.vv-mail-reply-text {
+  font-size: var(--fs-12-5);
+  color: var(--text-body);
+}
+
+.vv-mail-logs {
+  gap: 3px;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.vv-notice-actions {
+  display: flex;
+  gap: 8px;
+  padding-left: 26px;
+}
+
+/* ── 좁은 창: 칸·목록 열을 줄인다(상세가 먼저 줄어들어 글자가 한 줄에 몇 자만 남지 않게) ── */
+@media (max-width: 1180px) {
+  .vv {
+    grid-template-columns: minmax(148px, 184px) minmax(220px, 34%) minmax(0, 1fr);
+  }
+
+  .vv-detail .fv-detail-body {
+    padding: 18px 18px 24px;
+  }
+
+  .vv-detail .detail-notice {
+    padding: 10px 18px 14px;
+  }
+
+  .vv-lane-meta {
+    padding-left: 0;
+  }
+
+  .vv-action-label {
+    flex-basis: 100%;
+  }
+
+  .vv-worklog {
+    grid-template-columns: 96px minmax(0, 1fr) 56px auto;
+    grid-auto-flow: row dense;
+  }
+
+  .vv-worklog .vv-worklog-note {
+    grid-column: 1 / -1;
+  }
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "id": 5006,
+    "ticketId": 1013,
+    "content": "<p>초기화했습니다.</p>",
+    "authorId": 101,
+    "authorName": "홍길동",
+    "authorType": "internal",
+    "createdAt": "2026-09-15T01:00:00Z",
+    "updatedAt": "2026-09-15T01:00:00Z",
+    "attachments": []
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "id": 5004,
+    "ticketId": 1005,
+    "content": "<p>입사자 명단을 보내 주시면 진행하겠습니다.</p>",
+    "authorId": 101,
+    "authorName": "홍길동",
+    "authorType": "internal",
+    "createdAt": "2026-09-03T04:00:00Z",
+    "updatedAt": "2026-09-03T04:00:00Z",
+    "attachments": []
+  }
+]

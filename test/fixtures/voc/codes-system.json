@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "groupId": 3,
+    "code": "SYS0101",
+    "name": "CMS(화학물질관리시스템)",
+    "sortOrder": 1,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "groupId": 3,
+    "code": "SYS0102",
+    "name": "MSDS 관리",
+    "sortOrder": 2,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  },
+  {
+    "id": 3,
+    "groupId": 3,
+    "code": "SYS0103",
+    "name": "LDAR 모니터링",
+    "sortOrder": 3,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  },
+  {
+    "id": 4,
+    "groupId": 3,
+    "code": "SYS0201",
+    "name": "그룹웨어",
+    "sortOrder": 4,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  },
+  {
+    "id": 5,
+    "groupId": 3,
+    "code": "SYS0299",
+    "name": "옛 전자결재",
+    "sortOrder": 5,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": false,
+    "createdAt": "2026-03-24T00:00:00Z"
+  }
+]

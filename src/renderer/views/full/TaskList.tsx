@@ -18,6 +18,13 @@ export interface TaskListProps {
   onToggleOther: () => void;
   onSelect: (task: Task) => void;
   registerRow: (id: string, el: HTMLButtonElement | null) => void;
+  /** 개인·팀 할 일이 섞인 목록(출처 칩을 보인다 — 2.9단계 §4-2) */
+  mixed?: boolean;
+  /** 빈 목록 문장(없으면 기본) */
+  emptyTitle?: string;
+  emptyText?: string;
+  /** 기타 줄 묶음의 id(한 화면에 목록이 둘일 때 겹치지 않게) */
+  idPrefix?: string;
   ref?: Ref<HTMLDivElement>;
 }
 
@@ -26,7 +33,8 @@ const HINTS: Partial<Record<Bucket, string>> = {
 };
 
 export function TaskList(props: TaskListProps): ReactElement {
-  const { groups, today, selectedId, focusableId, otherOpen, onToggleOther, onSelect, registerRow, ref } = props;
+  const { groups, today, selectedId, focusableId, otherOpen, onToggleOther, onSelect, registerRow, mixed, ref } = props;
+  const prefix = props.idPrefix ?? 'fv';
   const total = BUCKETS.reduce((n, b) => n + groups[b].length, 0);
 
   const renderRows = (bucket: Bucket, tasks: Task[], id?: string): ReactElement => (
@@ -40,6 +48,7 @@ export function TaskList(props: TaskListProps): ReactElement {
             selected={task.id === selectedId}
             tabIndex={task.id === focusableId ? 0 : -1}
             onActivate={onSelect}
+            mixed={mixed}
             ref={(el) => registerRow(task.id, el)}
           />
         </li>
@@ -50,11 +59,13 @@ export function TaskList(props: TaskListProps): ReactElement {
   return (
     <div className="fv-list-body scroll" ref={ref}>
       {total === 0 ? (
-        <EmptyState title="열린 할 일이 없습니다.">위키에 새 할 일이 생기면 여기에 바로 나타납니다.</EmptyState>
+        <EmptyState title={props.emptyTitle ?? '열린 할 일이 없습니다.'}>
+          {props.emptyText ?? '위키에 새 할 일이 생기면 여기에 바로 나타납니다.'}
+        </EmptyState>
       ) : (
         BUCKETS.map((bucket) => {
           const tasks = groups[bucket];
-          const headId = `fv-bucket-${bucket}`;
+          const headId = `${prefix}-bucket-${bucket}`;
           if (bucket === 'other' && tasks.length > 0) {
             return (
               <section key={bucket} className="bucket" data-testid="bucket-other" data-count={tasks.length}>
@@ -63,7 +74,7 @@ export function TaskList(props: TaskListProps): ReactElement {
                     type="button"
                     className={cls('bucket-toggle', otherOpen && 'is-open')}
                     aria-expanded={otherOpen}
-                    aria-controls={otherOpen ? 'fv-other-rows' : undefined}
+                    aria-controls={otherOpen ? `${prefix}-other-rows` : undefined}
                     onClick={onToggleOther}
                   >
                     <IconList size={14} />
@@ -73,7 +84,7 @@ export function TaskList(props: TaskListProps): ReactElement {
                     <IconChevronDown size={14} className="bucket-toggle-chevron" />
                   </button>
                 </h3>
-                {otherOpen && renderRows(bucket, tasks, 'fv-other-rows')}
+                {otherOpen && renderRows(bucket, tasks, `${prefix}-other-rows`)}
               </section>
             );
           }

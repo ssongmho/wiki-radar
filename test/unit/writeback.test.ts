@@ -330,15 +330,47 @@ describe('로그 절 (앵커 없음·미발견)', () => {
     expect(fs.existsSync(at(root, 'wiki/entities/없는회사.md'))).toBe(false);
   });
 
-  it('체크박스 줄을 못 찾으면(필드가 문구 가운데) 로그로 떨어지고 경고한다', () => {
+  it('필드가 문구 가운데 있어도 스냅샷이 가리킨 줄이 그대로면 그 줄을 고친다(sync_todo 는 로그로 떨어진다 — 2단계 명세 §9-1)', () => {
     const root = copyFixture();
     fs.appendFileSync(at(root, WORK), '\n- [ ] 가운데 [pri:: 2] 필드 #내할일\n');
     const res = save(root, checkboxTask(root, WORK, '가운데'), 'done');
-    expect(res.unmatched).toEqual(['가운데 필드 #내할일 — 문구 미발견: _private/mgmt/업무 현황 종합 분석.md / 가운데 필드 #내할일']);
-    expect(res.loggedDone).toEqual(['가운데 필드 #내할일']);
-    expect(res.warnings).toEqual([
-      '체크박스 줄을 찾지 못해 _private/mgmt/내 할 일.md 로그 절에 적음: 가운데 필드 #내할일 — 목록에는 계속 보일 수 있음',
-    ]);
+    expect(res.updated).toEqual(['가운데 필드 #내할일 [done]']);
+    expect(res.unmatched).toEqual([]);
+    expect(res.loggedDone).toEqual([]);
+    expect(res.warnings).toEqual([]);
+    expect(read(root, WORK)).toContain('- [x] 가운데 [pri:: 2] 필드 #내할일 [done:: 2026-09-23]');
+    expect(read(root, TODO)).not.toContain('가운데 필드');
+  });
+
+  it('메일 경로에 대괄호가 든 줄(`…_[재요청] 제목.md`)도 줄을 고친다 — 로그로 빠지지 않는다(2026-09-28 실제 사례)', () => {
+    const root = copyFixture();
+    const line =
+      '- [ ] 🔴 거래처 선물 리스트 제출 (부서별 수량) #내할일 [pri:: 2] [due:: 2026-08-28] ' +
+      '[mail:: raw/mail/경영지원/2026/2026-08-26_1112_총무팀_[재요청] 거래처 선물 리스트 제출_2914b9.md] [opened:: 2026-08-13]';
+    write(root, TODO, read(root, TODO).replace('\n\n## 메일 회신 대기', `\n${line}\n\n## 메일 회신 대기`));
+    const task = checkboxTask(root, TODO, '거래처 선물 리스트');
+    // 스냅샷은 대괄호가 든 메일 경로를 끝까지 읽는다(회신 기능이 이 경로로 원본을 연다)
+    const listed = snapshotOf(root).tasks.find((t) => t.id === task.id);
+    expect(listed?.mail).toBe('raw/mail/경영지원/2026/2026-08-26_1112_총무팀_[재요청] 거래처 선물 리스트 제출_2914b9.md');
+    expect(listed?.title).toBe('거래처 선물 리스트 제출 (부서별 수량)');
+    const res = save(root, task, 'done');
+    expect(res.updated).toEqual(['🔴 거래처 선물 리스트 제출 (부서별 수량) #내할일 [done]']);
+    expect(res.loggedDone).toEqual([]);
+    const text = read(root, TODO);
+    expect(text).toContain(line.replace('- [ ] ', '- [x] ') + ' [done:: 2026-09-23]');
+    expect(text).not.toContain('_2914b9.md] —');
+    // 저장 뒤 목록에서 빠진다
+    expect(snapshotOf(root).tasks.some((t) => t.title.includes('거래처 선물 리스트'))).toBe(false);
+  });
+
+  it('체크박스 항목의 줄이 사라졌으면 로그에 적지 않고 아무것도 쓰지 않은 채 실패한다', () => {
+    const root = copyFixture();
+    fs.appendFileSync(at(root, WORK), '\n- [ ] 곧 지워질 할 일 #내할일\n');
+    const task = checkboxTask(root, WORK, '곧 지워질');
+    write(root, WORK, read(root, WORK).replace('- [ ] 곧 지워질 할 일 #내할일\n', ''));
+    const before = allFiles(root);
+    expect(() => save(root, task, 'done', { note: '메모도 쓰지 않는다' })).toThrow(/할 일 줄을 찾지 못함\(_private\/mgmt\/업무 현황 종합 분석\.md\).*아무것도 쓰지 않았음/);
+    expect(allFiles(root)).toEqual(before);
   });
 
   it('내 할 일.md 가 없으면 로그를 적지 않고 경고한다(파일을 만들지 않는다)', () => {

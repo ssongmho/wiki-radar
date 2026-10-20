@@ -13,6 +13,7 @@ import {
   buildReflectPrompt,
   childEnv,
   extractResultJson,
+  findResultJson,
   isReflectRunning,
   normalizeChangedPath,
   parseClaudeOutput,
@@ -148,7 +149,7 @@ describe('buildReflectPrompt', () => {
     const last = prompt.trimEnd().split('\n').pop() as string;
     expect(JSON.parse(last)).toEqual({
       changed: expect.any(Array),
-      skipped: [{ title: expect.any(String), reason: expect.any(String) }],
+      skipped: [{ id: expect.any(String), title: expect.any(String), reason: expect.any(String) }],
       summary: expect.any(String),
     });
     expect(prompt).toContain('마지막 줄');
@@ -203,6 +204,15 @@ describe('buildReflectPrompt', () => {
     expect(outside(prompt)).toEqual(outside(benign));
   });
 
+  it('회신을 보내고 저장한 항목은 보낸 본문(reply)을 넣고, 항목 형식 설명에 reply 를 적는다', () => {
+    const reply = '안녕하세요.\n\n8월 집계를 다시 돌려 정상 반영을 확인했습니다.\n\n감사합니다.';
+    const prompt = buildReflectPrompt([item({ reply }), item({ id: 'q-2' })]);
+    expect(prompt).toContain('reply(고객에게 보낸 회신 본문 — 업체 페이지에 회신 요지를 남길 때 참고)');
+    const parsed = JSON.parse(itemsBlock(prompt)) as Record<string, string>[];
+    expect(parsed[0].reply).toBe(reply);
+    expect('reply' in parsed[1]).toBe(false);
+  });
+
   it('항목이 없어도 형식은 유지된다', () => {
     const prompt = buildReflectPrompt([]);
     expect(JSON.parse(itemsBlock(prompt))).toEqual([]);
@@ -244,6 +254,18 @@ describe('claude 출력 해석', () => {
     expect(extractResultJson('{"other": 1}')).toBeNull();
   });
 
+  it('findResultJson: 같은 탐색 규칙을 다른 결과 형식에도 쓴다(convert 가 거절하면 더 앞의 후보)', () => {
+    const toBody = (v: unknown) =>
+      v && typeof v === 'object' && typeof (v as { body?: unknown }).body === 'string' ? (v as { body: string }).body : null;
+    expect(findResultJson('앞\n{"body":"첫"}\n{"other":1}\n', toBody)).toBe('첫');
+    expect(findResultJson('끝\n`{"body":"백틱"}`', toBody)).toBe('백틱');
+    expect(findResultJson('끝\n```json\n{\n  "body": "블록"\n}\n```', toBody)).toBe('블록');
+    expect(findResultJson('{"other":1}', toBody)).toBeNull();
+    // convert 를 주지 않으면 마지막 JSON 객체
+    expect(findResultJson('{"a":1}\n[1,2]\n{"b":2}')).toEqual({ b: 2 });
+    expect(findResultJson('없음')).toBeNull();
+  });
+
   it('normalizeChangedPath: 볼트 기준 상대경로로, 위키 밖은 버린다', () => {
     const root = path.resolve(os.tmpdir(), 'vault-x');
     expect(normalizeChangedPath(root, 'wiki\\entities\\a.md')).toBe('wiki/entities/a.md');
@@ -265,7 +287,7 @@ function toSlash(p: string): string {
 }
 
 describe('childEnv', () => {
-  it('Claude Code·Orca 세션 표식은 넘기지 않고, 사용자 설정과 시험용 추가 값은 넘긴다', () => {
+  it('Claude Code·Orca 세션 표식과 메일 계정 변수는 넘기지 않고, 사용자 설정과 시험용 추가 값은 넘긴다', () => {
     const env = childEnv(
       { FAKE_CLAUDE_MODE: 'ok' },
       {
@@ -284,6 +306,13 @@ describe('childEnv', () => {
         CLAUDE_CONFIG_DIR: 'D:\cfg',
         CLAUDE_CODE_USE_BEDROCK: '1',
         ANTHROPIC_API_KEY: 'k',
+        // 메일 계정·서버 설정은 자식에게 넘기지 않는다(비밀번호는 main 만 쓴다)
+        WIKI_RADAR_SMTP_HOST: 'smtps.example',
+        WIKI_RADAR_SMTP_USER: 'me@example.com',
+        WIKI_RADAR_SMTP_PASS: 'pw-secret',
+        wiki_radar_smtp_pass: 'pw-secret',
+        MAILHOST_MAIL_USER: 'me@example.com',
+        MAILHOST_MAIL_PASS: 'pw-secret',
       },
     );
     expect(Object.keys(env).sort()).toEqual(
@@ -331,7 +360,12 @@ describe('runReflect (가짜 claude)', () => {
       'Edit(raw/**),Write(raw/**),Edit(_todo-sync/**),Write(_todo-sync/**),' +
         'Edit(_private/mgmt/내 할 일.md),Write(_private/mgmt/내 할 일.md),' +
         'Edit(_private/mgmt/할 일 메모.md),Write(_private/mgmt/할 일 메모.md),' +
-        'Edit(CLAUDE.md),Write(CLAUDE.md),Edit(.claude/**),Write(.claude/**),Edit(.obsidian/**),Write(.obsidian/**)',
+        'Edit(CLAUDE.md),Write(CLAUDE.md),Edit(.claude/**),Write(.claude/**),Edit(.obsidian/**),Write(.obsidian/**),' +
+        // 메일 계정 파일(비밀번호)은 읽기까지 막는다(2.5단계 명세 §9-7)
+        'Read(_mail-ingest/**),Edit(_mail-ingest/**),Write(_mail-ingest/**),' +
+        'Read(**/.env),Edit(**/.env),Write(**/.env),Read(**/.env.*),Edit(**/.env.*),Write(**/.env.*),' +
+        // 메일 첨부는 읽지 않는다(2.14단계 §4-4)
+        'Read(raw/mail/_attachments/**)',
       '--max-turns',
       '40',
     ]);
@@ -376,7 +410,7 @@ describe('runReflect (가짜 claude)', () => {
     const { run } = await runFake('ok', { items: [item(), item({ id: 'q-2', title: '빈 메모 항목', note: '' })] });
     expect(run.state, run.error).toBe('done');
     expect(run.itemIds).toEqual(['q-1', 'q-2']);
-    expect(run.skipped).toEqual([{ title: '빈 메모 항목', reason: '처리 내용이 비어 있음' }]);
+    expect(run.skipped).toEqual([{ id: expect.any(String), title: '빈 메모 항목', reason: '처리 내용이 비어 있음' }]);
   }, 20_000);
 
   it('메모에 </items> 가 들어 있어도 가짜가 items 블록을 온전히 읽는다', async () => {

@@ -1,0 +1,74 @@
+[
+  {
+    "id": 11,
+    "groupId": 1,
+    "code": "inquiry",
+    "name": "문의",
+    "sortOrder": 1,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  },
+  {
+    "id": 12,
+    "groupId": 1,
+    "code": "bug",
+    "name": "오류",
+    "sortOrder": 2,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  },
+  {
+    "id": 13,
+    "groupId": 1,
+    "code": "enhancement",
+    "name": "개선",
+    "sortOrder": 3,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  },
+  {
+    "id": 14,
+    "groupId": 1,
+    "code": "data_request",
+    "name": "데이터 요청",
+    "sortOrder": 4,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  },
+  {
+    "id": 15,
+    "groupId": 1,
+    "code": "access",
+    "name": "권한",
+    "sortOrder": 5,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  },
+  {
+    "id": 16,
+    "groupId": 1,
+    "code": "other",
+    "name": "기타",
+    "sortOrder": 6,
+    "description": null,
+    "extra1": null,
+    "extra2": null,
+    "enabled": true,
+    "createdAt": "2026-03-24T00:00:00Z"
+  }
+]

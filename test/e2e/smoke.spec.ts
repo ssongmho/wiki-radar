@@ -1,5 +1,7 @@
 // 1단계 스모크: 테스트 사본 위키(today=2026-09-23)로 빌드된 앱을 띄워 명세 §3 정답표·§8 테스트 식별자로 확인한다.
 // 먼저 `npm run package`(또는 `npm run e2e`). 결과 스크린샷은 test-results/sidebar.png·full.png.
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { test, expect, type ElectronApplication, type Page } from '@playwright/test';
 import type { Bucket } from '../../src/shared/types';
@@ -54,12 +56,16 @@ let app: ElectronApplication;
 let logs: AppLogs;
 let sidebar: Page;
 let failed = false;
+let dataDir = '';
 /** 시작 전 테스트 사본의 해시. 이 시험은 사본을 직접 읽으므로(쓰지 않는다) 끝난 뒤 그대로인지 본다 */
 let fixtureBefore: Record<string, string> | undefined;
 
 test.beforeAll(async () => {
   fixtureBefore = treeDigest(FIXTURE_WIKI);
-  app = await launchApp({ wiki: FIXTURE_WIKI, today: TODAY });
+  // 메일은 앱 데이터 메일 보관소에 있다(2.15) — 시험 데이터 폴더에 사본의 raw/mail 을 복사해 둔다(위키는 그대로 읽기만)
+  dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wiki-radar-e2e-smoke-'));
+  fs.cpSync(path.join(FIXTURE_WIKI, 'raw', 'mail'), path.join(dataDir, 'mail-store', 'raw', 'mail'), { recursive: true });
+  app = await launchApp({ wiki: FIXTURE_WIKI, today: TODAY, dataDir });
   logs = watchLogs(app);
   await app.context().tracing.start({ screenshots: true, snapshots: true });
   sidebar = await windowByMode(app, 'sidebar');
@@ -82,6 +88,7 @@ test.afterAll(async () => {
     .tracing.stop(failed ? { path: path.join(RESULTS_DIR, 'trace.zip') } : undefined)
     .catch(() => undefined);
   await closeApp(app);
+  if (dataDir) fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   if (fixtureBefore) expect(treeDigest(FIXTURE_WIKI), '원본 test/fixtures/wiki 가 바뀌었다').toEqual(fixtureBefore);
 });
 

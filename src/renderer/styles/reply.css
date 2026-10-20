@@ -1,0 +1,460 @@
+/* 메일 회신 작성 칸(2.5단계 명세 §7) — 처리 결과 입력 폼 안. 색·글꼴은 tokens.css 의 A 관제 스코프 토큰만 쓴다 */
+
+/* 폼 머리: 제목 + 지난 발송 배지 */
+.result-form-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.reply-last-sent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12);
+  line-height: 1.4;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.reply-last-sent .icon {
+  color: var(--cyan);
+}
+
+/* 켜면 열리는 작성 칸: 폼 패널 안의 한 단계 어두운 칸 */
+.reply-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: -6px;
+  padding: 18px 20px 20px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius);
+}
+
+.reply-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-13-5);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.reply-panel-title .icon {
+  color: var(--cyan);
+}
+
+/* 입력 칸은 바탕이 panel 색이어야 작성 칸(bg) 위에서 보인다 */
+.reply-panel .text-input {
+  background: var(--panel);
+}
+
+.reply-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  min-height: 24px;
+}
+
+.field-head .link-btn {
+  min-height: 32px;
+  font-size: var(--fs-12);
+}
+
+.field-note {
+  font-size: var(--fs-12);
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.link-btn:disabled,
+.link-btn:disabled:hover {
+  color: var(--text-3);
+  text-decoration: none;
+  cursor: not-allowed;
+}
+
+/* 보내는 쪽 줄 */
+.reply-sender {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-size: var(--fs-13);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.reply-sender > .icon {
+  color: var(--cyan);
+}
+
+.reply-sender-address {
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* '나에게 숨은참조' 표식 — 좁은 칸에서 줄이 바뀌어도 한 덩어리로 */
+.reply-sender-note {
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-12);
+  line-height: 1.6;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.reply-sender .state-spinner {
+  width: 14px;
+  height: 14px;
+}
+
+/* 계정 없음·원본 없음(발송 막힘) */
+.reply-sender--warn {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  padding: 8px 12px;
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius-sm);
+  color: var(--amber);
+}
+
+.reply-sender--warn > .icon {
+  margin-top: 3px;
+  color: var(--amber);
+}
+
+.reply-sender-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fs-12-5);
+}
+
+.reply-sender-text code,
+.check-card-desc code {
+  padding: 0 3px;
+  border-radius: var(--radius-xs);
+  background: var(--bg);
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  color: var(--text);
+}
+
+/* 사용자가 그대로 입력할 파일 경로·변수 이름(MAILHOST_MAIL_PASS 등)은 낱말 중간에서 끊지 않는다 — 줄은 이름 사이의 가운뎃점·공백에서 바뀐다 */
+.reply-sender-text code {
+  white-space: nowrap;
+}
+
+.reply-sender-retry {
+  flex-shrink: 0;
+  min-height: 28px;
+  font-size: var(--fs-12);
+}
+
+/* 피싱 의심 경고(발송은 막지 않는다) */
+.reply-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--coral-bg);
+  border: 1px solid var(--coral-line);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12-5);
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.reply-warning > .icon {
+  margin-top: 2px;
+  color: var(--coral);
+}
+
+.reply-warning strong {
+  font-weight: 600;
+  color: var(--coral);
+}
+
+.reply-warning-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.reply-warning-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+}
+
+/* 본문 12줄 높이 */
+.reply-body {
+  min-height: calc(12 * 1.6em + 22px);
+}
+
+/* 초안 만들기 줄 */
+.draft-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: -6px;
+}
+
+.draft-bar .btn {
+  padding: 0 16px;
+}
+
+.draft-hint {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.draft-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: -6px;
+  font-size: var(--fs-12-5);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.draft-status .state-spinner {
+  width: 14px;
+  height: 14px;
+}
+
+.draft-status[data-state='running'] {
+  color: var(--amber);
+}
+
+.draft-status[data-state='failed'] {
+  color: var(--coral);
+}
+
+.draft-timer {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.draft-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--amber-line);
+  border-radius: var(--radius-sm);
+}
+
+.draft-notes .field-label {
+  color: var(--amber);
+}
+
+.draft-notes-text {
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--text-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 접이식 '보내는 사람·서명' */
+.reply-settings {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.reply-settings-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--hit);
+  padding: 0 12px;
+  border-radius: var(--radius);
+  list-style: none;
+  cursor: pointer;
+}
+
+.reply-settings-summary::-webkit-details-marker {
+  display: none;
+}
+
+.reply-settings-summary:hover {
+  background: var(--panel);
+}
+
+.reply-settings-chevron {
+  flex-shrink: 0;
+  color: var(--text-2);
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+}
+
+.reply-settings[open] .reply-settings-chevron {
+  transform: rotate(0deg);
+}
+
+.reply-settings-title {
+  flex-shrink: 0;
+  font-size: var(--fs-13);
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.reply-settings-note {
+  margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 12px;
+  border-top: 1px solid var(--line);
+}
+
+.reply-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.reply-settings-result {
+  font-size: var(--fs-12);
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.reply-settings-result.is-error {
+  color: var(--coral);
+}
+
+.check-card.is-disabled {
+  cursor: not-allowed;
+}
+
+.check-card.is-disabled .check-card-title {
+  color: var(--text-3);
+}
+
+/* ── 회신 확인 대화상자 ── */
+.dialog--wide {
+  width: min(640px, calc(100vw - 48px));
+}
+
+.dialog-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--coral-bg);
+  border: 1px solid var(--coral-line);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-13);
+  line-height: 1.55;
+}
+
+.dialog-warn > .icon {
+  margin-top: 3px;
+  color: var(--coral);
+}
+
+.dialog-body .dialog-warn strong {
+  color: var(--coral);
+}
+
+.confirm-grid {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+
+.confirm-grid dt {
+  color: var(--text-2);
+}
+
+.confirm-grid dd {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.confirm-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.confirm-body {
+  max-height: 180px;
+  margin: 0;
+  padding: 10px 12px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--text-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.confirm-more {
+  color: var(--text-3);
+}
+
+.confirm-note {
+  font-size: var(--fs-12);
+  color: var(--text-2);
+}
+
+/* 한국어 풀이 글은 낱말 중간에서 줄을 바꾸지 않는다 */
+.reply-sender-text,
+.reply-warning-text,
+.draft-status,
+.field-note,
+.reply-settings-result,
+.confirm-note,
+.dialog-warn {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}

@@ -513,25 +513,23 @@ describe.skipIf(skipReason !== null)('sync_todo.py 골든 (명세 §1-4)', () =>
       expect(results[1].updated[0]).toMatch(/…\s\[done]$/);
     });
 
-    it('필드가 가운데 있어 문구를 못 찾으면 로그로 떨어진다', () => {
-      scenario(
-        [{ target: checkbox(TODO, '가운데 필드'), status: 'done' }],
-        (root) => addTodoLine(root, '- [ ] 가운데 필드 [pri:: 2] 있는 할 일 #내할일'),
-      );
-    });
+    // 필드가 문구 가운데 있어 앵커(핵심문구 앞 40자)가 줄에 이어서 나오지 않는 줄은 골든에서 뺐다(2026-09-28).
+    // sync_todo 는 로그 절로 떨어뜨려 줄이 열린 채 남지만, 레이더는 스냅샷이 가리킨 줄을 고친다(의도적 차이 —
+    // 2단계 명세 §9-1, writeback.test.ts '필드가 문구 가운데 있어도…').
 
     it('파이썬과 JS 의 공백이 다른 글자(\\x85·U+FEFF·\\x1c)가 든 줄 — 제목·앵커·로그·메모 절이 같다', () => {
       // \x85(NEL)·\x1c 는 파이썬에서만 공백, U+FEFF 는 JS 에서만 공백이다(build_todo core_of 는 파이썬 규칙)
+      // 줄을 찾는 경우만 골든으로 대조한다. 필드 뒤에 U+FEFF 가 붙은 줄·필드가 가운데 있는 줄은 sync_todo 가
+      // 로그로 떨어뜨리고 레이더는 줄을 고친다(의도적 차이 — 위 주석). \x1c 는 필드 바로 앞에 두어 파이썬 공백으로
+      // 필드와 함께 떨어지는지(제목·메모 절 `## t` 가 같은지)를 본다.
       const lines = [
         '- [ ] 특이 공백 끝 NEL #내할일 [pri:: 1]\x85',
-        '- [ ] 특이 공백 끝 BOM #내할일 [pri:: 1]﻿',
         '- [ ] ﻿특이 공백 앞 BOM #내할일 [pri:: 3]',
-        '- [ ] 특이 공백 가운데\x1c[pri:: 2] 분리 문자 #내할일',
+        '- [ ] 특이 공백 가운데 분리 문자 #내할일\x1c[pri:: 2]',
       ];
       const { results } = scenario(
         [
           { target: checkbox(TODO, '특이 공백 끝 NEL'), status: 'wip', note: 'NEL 메모' },
-          { target: checkbox(TODO, '특이 공백 끝 BOM'), status: 'wip', note: 'BOM 메모' },
           { target: checkbox(TODO, '특이 공백 앞 BOM'), status: 'done', note: '앞 BOM 메모' },
           { target: checkbox(TODO, '특이 공백 가운데'), status: 'done', note: '분리 문자 메모' },
         ],

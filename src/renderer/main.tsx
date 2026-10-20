@@ -8,6 +8,11 @@ import './styles/base.css';
 import './styles/components.css';
 import './styles/sidebar.css';
 import './styles/full.css';
+import './styles/reply.css';
+import './styles/voc.css';
+import './styles/voc-task.css';
+import './styles/mailbox.css';
+import './styles/wiki.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -21,7 +26,7 @@ function readMode(search: string): WindowMode {
 
 const mode = readMode(window.location.search);
 document.documentElement.dataset.mode = mode;
-document.title = mode === 'sidebar' ? 'wiki-radar 사이드바' : 'wiki-radar';
+document.title = mode === 'sidebar' ? 'Radar 사이드바' : 'Radar';
 
 const container = document.getElementById('root');
 if (container) {

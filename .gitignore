@@ -90,6 +90,7 @@ typings/
 
 # Electron-Forge
 out/
+out-*/
 
 # wiki-radar: Playwright 결과·보고서, 앱 데이터(루트의 data/ 만 — src 안의 data 폴더는 숨기지 않는다)
 test-results/

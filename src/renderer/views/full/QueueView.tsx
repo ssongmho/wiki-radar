@@ -1,16 +1,22 @@
 // 풀스크린 "반영 대기" 화면(2단계 명세 §2·§3): 대기 항목 목록(빼기) · [위키에 반영](확인 대화) · 진행 표시와 로그 · 마지막 결과.
 // Claude 는 사람이 [위키에 반영] → 확인 대화의 [반영 시작]을 눌렀을 때만 실행된다.
+// 2.14: 메일함에서 넣은 메일(kind mail)은 「출처: 메일」 줄 · [메일 열기] · 이번 반영에서 빠지는 이유(blocked)를 보인다.
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { QueueItem, ReflectRun } from '../../../shared/types';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { IconAlert, IconCheck, IconExternal, IconUpload } from '../../components/Icons';
+import { getRadar } from '../../api';
+import { IconAlert, IconCheck, IconExternal, IconMail, IconUpload } from '../../components/Icons';
 import { EmptyState, LoadingState } from '../../components/StateMessage';
+import { useNow } from '../../hooks/useNow';
 import type { QueueHook, ReflectHook } from '../../hooks/useQueue';
 import { cls } from '../../lib/cls';
 import { focusLost, refocusIfLost } from '../../lib/focus';
 import {
   changedFiles,
   formatElapsed,
+  queueMailCount,
+  queueSendCounts,
+  queueSourceText,
   queueStatusText,
   queueTimeText,
   runElapsed,
@@ -25,27 +31,19 @@ export interface QueueViewProps {
   onOpenFile: (path: string) => void;
   /** 짧은 안내(빼기 실패 등) */
   notify: (message: string) => void;
+  /** 반영을 실행할 수 없는 이유(claude 가 없음 — 2.7단계). 있으면 [위키에 반영]을 끈다 */
+  unavailable?: string | null;
   /**
    * 바깥(사이드바 '반영 N')에서 이 화면을 열 때마다 늘어난다. 그때(와 처음 그릴 때) 초점이 사라져 있으면 화면 제목으로 옮긴다
    * — 창이 바뀌어 초점이 body 에 있으면 키보드로 쓰는 사람이 자리를 잃는다.
    */
   focusRequest?: number;
+  /** 2.14: 메일함에서 그 메일(스레드)을 연다 */
+  onOpenMail?: (mailKey: string) => void;
 }
 
 const RUN_STATUS_TITLE = 'run-status-title';
 const RUN_RESULT_TITLE = 'run-result-title';
-
-/** 실행 중에 1초마다 다시 그려 경과 시간을 올린다 */
-function useNow(active: boolean): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!active) return;
-    setNow(Date.now());
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [active]);
-  return now;
-}
 
 function QueueRow({
   item,
@@ -53,17 +51,27 @@ function QueueRow({
   locked,
   removing,
   onRemove,
+  onOpenMail,
 }: {
   item: QueueItem;
   today: string;
   locked: boolean;
   removing: boolean;
   onRemove: () => void;
+  onOpenMail?: (mailKey: string) => void;
 }): ReactElement {
   const time = queueTimeText(item.createdAt, today);
   const headId = `queue-item-${item.id}`;
+  const isMail = item.kind === 'mail';
+  const source = queueSourceText(item, today);
   return (
-    <li className={cls('queue-item', locked && 'is-locked')} data-testid="queue-item" data-queue-id={item.id} aria-labelledby={headId}>
+    <li
+      className={cls('queue-item', locked && 'is-locked')}
+      data-testid="queue-item"
+      data-queue-id={item.id}
+      data-kind={item.kind}
+      aria-labelledby={headId}
+    >
       <div className="queue-item-body">
         <p id={headId} className="queue-item-title">
           {item.title}
@@ -71,10 +79,31 @@ function QueueRow({
         <p className="queue-item-meta">
           <span className="queue-status">{queueStatusText(item)}</span>
           {item.company && <span>{item.company}</span>}
-          {time && <span>{time} 저장</span>}
+          {time && <span>{time} {isMail ? '넣음' : '저장'}</span>}
           {locked && <span className="queue-running">반영 중</span>}
         </p>
-        {item.note ? <p className="queue-item-note">{item.note}</p> : <p className="empty-note">처리 내용 없이 상태만 넘깁니다.</p>}
+        {source && (
+          <p className="queue-item-meta queue-item-source" data-testid="queue-item-source">
+            <span>{source}</span>
+            {item.mailKey && onOpenMail && (
+              <button type="button" className="link-btn" data-testid="btn-queue-open-mail" onClick={() => onOpenMail(item.mailKey as string)}>
+                <IconMail size={14} />
+                메일 열기
+              </button>
+            )}
+          </p>
+        )}
+        {item.note ? (
+          <p className="queue-item-note">{item.note}</p>
+        ) : (
+          <p className="empty-note">{isMail ? '메모 없이 메일 내용에서 고릅니다.' : '처리 내용 없이 상태만 넘깁니다.'}</p>
+        )}
+        {item.blocked && (
+          <p className="queue-item-blocked" data-testid="queue-item-blocked">
+            <IconAlert size={14} />
+            이번 반영에서 빠집니다 — {item.blocked}
+          </p>
+        )}
       </div>
       <button
         type="button"
@@ -236,7 +265,7 @@ function RunResult({ run, today, onOpenFile }: { run: ReflectRun; today: string;
   );
 }
 
-export function QueueView({ queue, reflect, today, onOpenFile, notify, focusRequest = 0 }: QueueViewProps): ReactElement {
+export function QueueView({ queue, reflect, today, onOpenFile, notify, unavailable, focusRequest = 0, onOpenMail }: QueueViewProps): ReactElement {
   const [confirming, setConfirming] = useState(false);
   const [starting, setStarting] = useState(false);
   const [removing, setRemoving] = useState<Set<string>>(() => new Set());
@@ -245,6 +274,25 @@ export function QueueView({ queue, reflect, today, onOpenFile, notify, focusRequ
   const now = useNow(running);
   const count = queue.items.length;
   const runningIds = new Set(running ? run.itemIds : []);
+  const mailCount = queueMailCount(queue.items);
+  const sendCounts = queueSendCounts(queue.items);
+
+  // 2.14 §1-1: 이 버전이 모르는 kind 의 항목(새 버전이 넣은 것) — 그대로 둔다는 한 줄. 옛 preload 면 0
+  const [unknownCount, setUnknownCount] = useState(0);
+  useEffect(() => {
+    const api = getRadar();
+    if (!api || typeof api.getQueueUnknownCount !== 'function') return;
+    let live = true;
+    api.getQueueUnknownCount().then(
+      (n) => {
+        if (live && typeof n === 'number' && n >= 0) setUnknownCount(n);
+      },
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [count]);
 
   // 실행이 끝나면(main 이 처리한 항목을 빼고 알린다) 대기열을 한 번 더 읽는다 — 알림을 놓쳤을 때를 위해.
   const lastState = useRef(run?.state);
@@ -258,7 +306,7 @@ export function QueueView({ queue, reflect, today, onOpenFile, notify, focusRequ
     lastState.current = run?.state;
   }, [run, refresh]);
 
-  const canRun = queue.supported && reflect.supported && count > 0 && !running && !starting;
+  const canRun = queue.supported && reflect.supported && !unavailable && count > 0 && !running && !starting;
 
   const titleRef = useRef<HTMLHeadingElement>(null);
   const listTitleRef = useRef<HTMLHeadingElement>(null);
@@ -315,6 +363,7 @@ export function QueueView({ queue, reflect, today, onOpenFile, notify, focusRequ
   let hint: string;
   if (!queue.supported || !reflect.supported) hint = '이 앱 연결에는 위키 반영 기능이 없습니다.';
   else if (running) hint = '반영이 끝날 때까지 새로 시작할 수 없습니다.';
+  else if (unavailable) hint = unavailable;
   else if (count === 0) hint = '대기 중인 항목이 없습니다.';
   else hint = `대기 ${count}건을 한 번에 보냅니다. 한 번에 하나만 실행하고 최대 15분 걸립니다.`;
 
@@ -329,7 +378,7 @@ export function QueueView({ queue, reflect, today, onOpenFile, notify, focusRequ
             반영 대기 <span className={cls('qv-count', count === 0 && 'is-zero')}>{count}건</span>
           </h1>
           <p className="qv-lead">
-            할 일을 저장할 때 ‘위키 지식에도 반영’을 켠 항목이 여기에 쌓입니다. [위키에 반영]을 누르면 Claude가 관련 업체·주제
+            할 일을 저장할 때 ‘위키 지식에도 반영’을 켠 항목과 메일함에서 [위키에 반영]으로 넣은 메일이 여기에 쌓입니다. [위키에 반영]을 누르면 Claude가 관련 업체·주제
             페이지와 log.md에 처리 결과를 반영합니다. 할 일 줄과 메모는 저장할 때 이미 기록했습니다.
           </p>
           <div className="qv-actions">
@@ -380,9 +429,15 @@ export function QueueView({ queue, reflect, today, onOpenFile, notify, focusRequ
                   locked={runningIds.has(item.id)}
                   removing={removing.has(item.id)}
                   onRemove={() => void remove(item)}
+                  onOpenMail={onOpenMail}
                 />
               ))}
             </ul>
+          )}
+          {unknownCount > 0 && (
+            <p className="empty-note" data-testid="queue-unknown" data-count={unknownCount}>
+              이 버전이 모르는 항목 {unknownCount}건(새 버전에서 넣음) — 그대로 둡니다.
+            </p>
           )}
         </section>
       </div>
@@ -397,9 +452,23 @@ export function QueueView({ queue, reflect, today, onOpenFile, notify, focusRequ
         onCancel={() => setConfirming(false)}
       >
         <p>
-          Claude가 위키 폴더에서 <strong>위키 문서를 직접 고칩니다</strong>. 대기 중인 <strong>{count}건</strong>을 한 번에 보내고, 관련
-          업체·주제 페이지와 log.md에 처리 결과를 반영합니다.
+          Claude가 위키 폴더에서 <strong>위키 문서를 직접 고칩니다</strong>. 대기 중인{' '}
+          <strong data-testid="reflect-confirm-count" data-count={sendCounts.send}>
+            {sendCounts.send}건
+          </strong>
+          을 한 번에 보내고, 관련 업체·주제 페이지와 log.md에 처리 결과를 반영합니다.
         </p>
+        {sendCounts.blocked > 0 && (
+          <p data-testid="reflect-confirm-blocked" data-count={sendCounts.blocked}>
+            보낼 수 없는 메일 {sendCounts.blocked}건은 이번 반영에서 빠지고 대기열에 남습니다.
+          </p>
+        )}
+        {mailCount > 0 && (
+          <p className="dialog-outside" data-testid="reflect-confirm-mail" data-count={mailCount}>
+            메일 {mailCount}건(본문·보낸이·첨부 이름)이 함께 Claude Code 로 보내집니다 — 회사 밖으로 나갑니다.
+            분량이 크면 일부 메일은 다음 반영으로 미룹니다.
+          </p>
+        )}
         <ul className="dialog-list">
           <li>raw/ 와 할 일 줄·메모 파일은 고치지 않고, 확신이 없는 항목은 건너뛰고 이유를 남기게 합니다.</li>
           <li>실행은 최대 15분 걸리고, 끝나면 바뀐 파일 목록을 이 화면에 보여 줍니다.</li>

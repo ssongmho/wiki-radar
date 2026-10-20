@@ -979,3 +979,30 @@
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
+
+/* ── 할 일 줄 출처 칩(2.9단계 §4-2): 팀 "팀 · 문서이름"(사이드바 "팀") · 개인 "개인". 글자 칩, 시안 바탕 ── */
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 14em;
+  height: 18px;
+  margin-right: 6px;
+  padding: 0 5px;
+  vertical-align: 1px;
+  background: rgba(92, 200, 220, 0.12);
+  border: 1px solid rgba(92, 200, 220, 0.35);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--cyan);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source-chip--personal {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--text-2);
+}

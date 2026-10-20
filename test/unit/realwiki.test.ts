@@ -45,7 +45,7 @@ describe.skipIf(!exists)('실제 위키(읽기 전용)', () => {
       expect(snap.pageCount).toBeGreaterThan(0);
       expect(ms).toBeLessThan(5000);
 
-      const bySource = { curated: 0, checkbox: 0 };
+      const bySource = { curated: 0, checkbox: 0, voc: 0, team: 0 };
       for (const t of snap.tasks) bySource[t.source]++;
       console.log(
         `[실제 위키] today=${today} ${ms.toFixed(0)}ms pageCount=${snap.pageCount} tasks=${snap.tasks.length}`,
